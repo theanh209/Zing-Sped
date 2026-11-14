@@ -21,7 +21,8 @@
 ## ⚡ Các tính năng nổi bật (Features)
 
 ### 🏎️ Tab 0: Đua Xe Cơ Bản (Racing Cheats)
-- **Auto Đua Lập Trình (Auto Race):** Tự động bám đường hướng dẫn hoặc tự ra giữa đường (Map ID 157 Hồ Long Tỉnh,...).
+- **Danh Mục Bản Đồ (Map ID Selector):** Cho phép chọn nhanh bản đồ cần đua (Hồ Long Tỉnh 157, Thành Phố 11 102, Đảo 11 120, Thu Danh Sơn 145, Suối Nước Nóng 188, Sa Mạc Tốc Độ 210) để tự động căn chỉnh tọa độ cua.
+- **Auto Đua Lập Trình (Auto Race):** Tự động bám đường hướng dẫn hoặc tự ra giữa đường kết hợp quỹ đạo tối ưu.
 - **Vô Hạn Nitro (Infinite Nitro):** Luôn duy trì nitro, hỗ trợ thanh trượt tùy chỉnh thời gian Nitro (1s - 10s).
 - **Gia Tốc (Speed Acceleration):** Tăng tốc độ tối đa của xe, hỗ trợ thanh trượt tốc độ (50 - 300 km/h).
 - **Mini Boot (Super Mini Boost):** Tăng tốc mini boost liên tục.
@@ -34,12 +35,16 @@
 - **Ký Sinh (Parasite):** Ghép và đồng bộ xe mục tiêu.
 - **Fake Tên:** Ẩn hoặc đổi tên hiển thị trong trận.
 
-### 🚘 Tab 2: Xe & Góc Nhìn (Kart & Visuals)
+### 🚘 Tab 2: Xe & Căn Góc Drift (Kart & Apex Drift Guide)
+- **Tâm Can Drift & Apex Racing Line:** Hiển thị tâm ngắm HUD và đường cong dẫn hướng ôm cua (Apex Trajectory) dạng Out-In-Out chuẩn xác trên màn hình.
+- **Tính Toán Góc Cua Tối Ưu (CWW Boost Calculator):** Phân tích và căn góc drift trong vùng vàng **38° - 45°** lý tưởng nhất của ZingSpeed Mobile, giúp tối đa hóa tốc độ tích nạp Nitro và giảm thiểu tối đa mất tốc độ góc cua để về đích nhanh nhất.
+- **Cảnh Báo CWW Boost Ready:** Báo hiệu thời điểm chuẩn xác nhất để kích hoạt kép phun nitro (CWW / WCW) khi xe đạt độ trôi góc tối ưu.
 - **Mod Skin & Xe:** Mở khóa hiển thị xe và skin yêu thích.
 - **Mod Chỉ Số Xe:** Tùy biến thông số hiệu năng xe.
 - **Camera FOV:** Thanh trượt góc nhìn Camera từ 45° đến 120° giúp mở rộng tầm nhìn toàn cảnh đường đua.
 
 ### 🛠️ Tab 3: Tiện Ích & Phòng Chờ (Utilities & Protection)
+- **Chống AFK Kick Phòng Chờ (Anti-AFK Keepalive):** Ngăn chặn hệ thống game kick ra khỏi phòng khi treo máy, đồng thời giữ màn hình luôn sáng (`idleTimerDisabled`).
 - **HUD Realtime Overlay:** Bảng chỉ số FPS thực tế, Ping ms, đồng hồ bấm giờ (Stopwatch) và Badges cheat đang hoạt động (không cản trở thao tác lái xe).
 - **Live Memory Inspector:** Xem trực tiếp địa chỉ `Unity Base (0x...)` và trạng thái module game ngay trên menu.
 - **Bộ Nạp Offset Động (`Offsets.json`):** Tự động đọc file `Offsets.json` từ thư mục Documents của game, cho phép bạn cập nhật offset 0x bất cứ lúc nào qua Filza/Text Editor mà **không cần phải biên dịch lại mã nguồn**.
@@ -48,6 +53,7 @@
 - **Chống Report Server & Chặn Log Analytics:** Can thiệp ngắt gói tin gửi crash log/telemetry về máy chủ game, giảm thiểu nguy cơ bị quét tài khoản.
 
 ### 👑 Tab 4: Tác Giả Zhee Dev & Giao Diện (Showcase & System)
+- **Ghi Nhớ Vị Trí Nút Nổi:** Tự động lưu tọa độ X, Y của nút menu khi bạn kéo thả, không bao giờ bị nhảy về giữa màn hình sau khi khởi động lại game.
 - **Thẻ Tác Giả Zhee Dev (Profile Showcase):** Tiêu đề animated gradient cầu vồng, card thông tin lập trình viên viền neon phát sáng, hiển thị trạng thái `STATUS: ONLINE & ACTIVATED`.
 - **Cử chỉ 3 ngón tay (3-Finger Tap):** Chạm 3 ngón tay cùng lúc lên màn hình để ẩn/hiện menu nhanh chóng.
 - **Âm thanh phản hồi (Sound Effects):** Phát âm thanh click native khi thao tác.

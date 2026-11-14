@@ -16,6 +16,7 @@ void LoadMenu();
 void SetStyles();
 void ApplyTheme(int preset);
 void RenderHUD();
+void RenderDriftGuide();
 
 extern ImVec2 MenuOrigin;
 extern ImVec2 MenuSize;

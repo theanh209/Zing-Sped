@@ -243,6 +243,7 @@ void SaveConfig() {
     [defaults setBool:mods.ShowMatchTimer forKey:@"zst_ShowMatchTimer"];
     [defaults setBool:mods.AutoReady forKey:@"zst_AutoReady"];
     [defaults setBool:mods.AutoStart forKey:@"zst_AutoStart"];
+    [defaults setBool:mods.AntiAFK forKey:@"zst_AntiAFK"];
     [defaults setBool:mods.AntiCollision forKey:@"zst_AntiCollision"];
     [defaults setBool:mods.AntiReport forKey:@"zst_AntiReport"];
     [defaults setBool:mods.BlockAnalytics forKey:@"zst_BlockAnalytics"];
@@ -250,6 +251,9 @@ void SaveConfig() {
     [defaults setBool:mods.SoundEffects forKey:@"zst_SoundEffects"];
     [defaults setBool:mods.GestureShortcut forKey:@"zst_GestureShortcut"];
     [defaults setInteger:mods.ThemePreset forKey:@"zst_ThemePreset"];
+    [defaults setInteger:mods.SelectedMapIndex forKey:@"zst_SelectedMapIndex"];
+    [defaults setBool:mods.ShowDriftGuide forKey:@"zst_ShowDriftGuide"];
+    [defaults setBool:mods.OptimalDriftCalc forKey:@"zst_OptimalDriftCalc"];
     [defaults setFloat:mods.IconSize forKey:@"zst_IconSize"];
     [defaults setFloat:mods.IconOpacity forKey:@"zst_IconOpacity"];
     [defaults synchronize];
@@ -272,6 +276,7 @@ void LoadConfig() {
         mods.AutoDuaMode = (int)[defaults integerForKey:@"zst_AutoDuaMode"];
         if (mods.AutoDuaMode == 0) mods.AutoDuaMode = 1;
         mods.AutoDuaLapTrinh = [defaults boolForKey:@"zst_AutoDuaLapTrinh"];
+        mods.SelectedMapIndex = (int)[defaults integerForKey:@"zst_SelectedMapIndex"];
         mods.KySinh = [defaults boolForKey:@"zst_KySinh"];
         mods.FakeTen = [defaults boolForKey:@"zst_FakeTen"];
         mods.ModSkin = [defaults boolForKey:@"zst_ModSkin"];
@@ -279,6 +284,8 @@ void LoadConfig() {
         mods.ModChiSoXe = [defaults boolForKey:@"zst_ModChiSoXe"];
         mods.CustomFOV = [defaults boolForKey:@"zst_CustomFOV"];
         mods.CameraFOV = [defaults floatForKey:@"zst_CameraFOV"];
+        mods.ShowDriftGuide = [defaults boolForKey:@"zst_ShowDriftGuide"];
+        mods.OptimalDriftCalc = [defaults boolForKey:@"zst_OptimalDriftCalc"];
         
         // Config mới
         if ([defaults objectForKey:@"zst_ShowHUD"] != nil) {
@@ -286,6 +293,7 @@ void LoadConfig() {
             mods.ShowMatchTimer = [defaults boolForKey:@"zst_ShowMatchTimer"];
             mods.AutoReady = [defaults boolForKey:@"zst_AutoReady"];
             mods.AutoStart = [defaults boolForKey:@"zst_AutoStart"];
+            mods.AntiAFK = [defaults boolForKey:@"zst_AntiAFK"];
             mods.AntiCollision = [defaults boolForKey:@"zst_AntiCollision"];
             mods.AntiReport = [defaults boolForKey:@"zst_AntiReport"];
             mods.BlockAnalytics = [defaults boolForKey:@"zst_BlockAnalytics"];
@@ -347,6 +355,17 @@ void LoadMods()
                         // Code Giảm va chạm / Ổn định thân xe
                     }
                 }
+
+                // Xử lý chống AFK kick & giữ sáng màn hình
+                static NSTimeInterval lastAntiAFKCheck = 0;
+                NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
+                if (now - lastAntiAFKCheck > 2.0) {
+                    lastAntiAFKCheck = now;
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        [UIApplication sharedApplication].idleTimerDisabled = mods.AntiAFK;
+                    });
+                }
+
                 [NSThread sleepForTimeInterval:0.016]; // Ngủ 16ms (60fps)
             }
         }

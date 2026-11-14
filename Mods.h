@@ -30,9 +30,10 @@ struct Mods {
     float GiaTocSpeed = 105.0f; // Mặc định 105.0f, range 10.0f - 300.0f
     float NitroDuration = 3.0f;  // Mặc định 3.0f, range 1.0f - 10.0f
     
-    // Tab Auto Đua
+    // Tab Auto Đua & Bản đồ (Map Selector)
     int AutoDuaMode = 1; // 1: Theo đường hướng dẫn, 2: Tự ra giữa đường
     bool AutoDuaLapTrinh = false;
+    int SelectedMapIndex = 0; // Danh mục Map ID
     
     // Tab Nhân Vật / Xe
     bool KySinh = false;
@@ -41,15 +42,18 @@ struct Mods {
     bool UnlockXeSkin = false;
     bool ModChiSoXe = false;
     
-    // Camera FOV
+    // Camera FOV & Hỗ trợ Drift (Drift Assistant)
     bool CustomFOV = false;
     float CameraFOV = 60.0f; // Mặc định 60.0f, range 45.0f - 120.0f
+    bool ShowDriftGuide = true; // Tâm ngắm & Thước đo góc Drift
+    bool OptimalDriftCalc = true; // Tính toán góc chạy & drift tối ưu về nhất
 
     // Tab Tiện Ích & Phòng Chờ (Tab 3)
     bool ShowHUD = true;          // Hiển thị HUD FPS / Ping
     bool ShowMatchTimer = true;   // Hiển thị đồng hồ bấm giờ trận
     bool AutoReady = false;        // Tự động bấm Sẵn sàng phòng chờ
     bool AutoStart = false;        // Tự động bấm bắt đầu
+    bool AntiAFK = true;          // Chống treo máy kick khỏi phòng chờ
     bool AntiCollision = false;    // Giảm va chạm nảy xe cọ tường
     bool AntiReport = true;        // Chặn log / report gửi về server VNG
     bool BlockAnalytics = true;    // Chặn telemetry / crashlytics
@@ -75,6 +79,7 @@ void PlayBeepSound(int soundId = 1104);
 void ApplyTheme(int preset);
 void InitAntiReport();
 void RenderHUD();
+void RenderDriftGuide();
 void LoadDynamicOffsets();
 void SaveDefaultOffsetsFile();
 void ResetMatchTimer();

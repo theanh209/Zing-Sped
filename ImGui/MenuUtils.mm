@@ -101,8 +101,19 @@ bool isOpened = false;
     NSData* data = [[NSData alloc] initWithBase64EncodedString:baseimage options:0];
     UIImage* menuIconImage = [UIImage imageWithData:data];
 
+    CGPoint initialCenter = CGPointMake(mainView.frame.size.width / 2, mainView.frame.size.height / 2);
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    if ([defaults objectForKey:@"zst_ButtonPosX"] != nil) {
+        float posX = [defaults floatForKey:@"zst_ButtonPosX"];
+        float posY = [defaults floatForKey:@"zst_ButtonPosY"];
+        if (posX > 20 && posX < mainView.frame.size.width - 20 && posY > 20 && posY < mainView.frame.size.height - 20) {
+            initialCenter = CGPointMake(posX, posY);
+        }
+    }
+
     InvisibleMenuButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-    InvisibleMenuButton.frame = CGRectMake(mainView.frame.size.width / 2, mainView.frame.size.height / 2, 50, 50);
+    InvisibleMenuButton.frame = CGRectMake(0, 0, 50, 50);
+    InvisibleMenuButton.center = initialCenter;
     InvisibleMenuButton.backgroundColor = [UIColor clearColor];
     [InvisibleMenuButton addTarget:self action:@selector(buttonDragged:withEvent:) forControlEvents:UIControlEventTouchDragInside];
     [InvisibleMenuButton addTarget:self action:@selector(buttonDragEnded:) forControlEvents:UIControlEventTouchUpInside];
@@ -113,7 +124,8 @@ bool isOpened = false;
     [[UIApplication sharedApplication].windows[0].rootViewController.view addSubview:InvisibleMenuButton];
 
     VisibleMenuButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-    VisibleMenuButton.frame = CGRectMake(mainView.frame.size.width / 2, mainView.frame.size.height / 2, 50, 50);
+    VisibleMenuButton.frame = CGRectMake(0, 0, 50, 50);
+    VisibleMenuButton.center = initialCenter;
     VisibleMenuButton.backgroundColor = [UIColor clearColor];
     VisibleMenuButton.layer.cornerRadius = VisibleMenuButton.frame.size.width * 0.5f;
     [VisibleMenuButton setBackgroundImage:menuIconImage forState:UIControlStateNormal];
@@ -182,6 +194,11 @@ bool isOpened = false;
         VisibleMenuButton.transform = button.transform;
         VisibleMenuButton.layer.opacity = 0.7;
     }];
+
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    [defaults setFloat:button.center.x forKey:@"zst_ButtonPosX"];
+    [defaults setFloat:button.center.y forKey:@"zst_ButtonPosY"];
+    [defaults synchronize];
 }
 
 @end

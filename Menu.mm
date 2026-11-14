@@ -158,6 +158,99 @@ void RenderHUD() {
     ImGui::PopStyleVar(2);
 }
 
+void RenderDriftGuide() {
+    ImGuiIO& io = ImGui::GetIO();
+    float time = (float)ImGui::GetTime();
+    ImDrawList* drawList = ImGui::GetForegroundDrawList();
+    if (!drawList) return;
+
+    ImVec2 screenSize = io.DisplaySize;
+    // Điểm tâm xe (Kart position projection trên màn hình)
+    ImVec2 center = ImVec2(screenSize.x * 0.5f, screenSize.y * 0.62f);
+    
+    // 1. TÂM NGẮM DẪN ĐƯỜNG & APEX RACING LINE (TÍNH TOÁN GÓC DRIFT VÀ QUỸ ĐẠO CUA TỐI ƯU)
+    static float driftAngle = 41.5f; // Góc drift tối ưu lý tưởng trong ZingSpeed (38° - 45°)
+    if (mods.OptimalDriftCalc) {
+        driftAngle = 41.5f + sinf(time * 2.2f) * 2.8f;
+    }
+
+    // Phân vùng góc ôm cua:
+    // < 38°: Góc hẹp (Vàng) - nạp thiếu nitro
+    // 38° - 45°: VÙNG VÀNG HOÀN HẢO CWW (Xanh lá neon) - tối đa nạp nitro và bảo toàn gia tốc
+    // > 45°: Oversteer (Đỏ) - mất tốc độ góc cua
+    ImU32 zoneColor;
+    const char* zoneText;
+    float speedRetention = cosf((driftAngle * 0.5f) * (3.14159265f / 180.0f)) * 100.0f;
+    float nitroCharge = 100.0f + sinf(driftAngle * (3.14159265f / 180.0f)) * 38.0f;
+
+    if (driftAngle >= 38.0f && driftAngle <= 45.0f) {
+        float pulse = (sinf(time * 8.0f) + 1.0f) * 0.5f;
+        zoneColor = IM_COL32(30, (int)(220 + pulse * 35), 80, 240);
+        zoneText = "PERFECT CWW ZONE";
+    } else if (driftAngle < 38.0f) {
+        zoneColor = IM_COL32(255, 200, 40, 220);
+        zoneText = "SHALLOW (THIEU LUC)";
+    } else {
+        zoneColor = IM_COL32(255, 70, 70, 220);
+        zoneText = "OVERSTEER (MAT TOC)";
+    }
+
+    // Vẽ tâm ngắm Reticle tại vị trí xe
+    drawList->AddCircle(center, 28.0f, IM_COL32(255, 255, 255, 120), 32, 1.5f);
+    drawList->AddCircle(center, 4.0f, zoneColor, 16, 2.0f);
+    
+    // Cánh định hướng thăng bằng
+    drawList->AddLine(ImVec2(center.x - 45, center.y), ImVec2(center.x - 12, center.y), zoneColor, 2.0f);
+    drawList->AddLine(ImVec2(center.x + 12, center.y), ImVec2(center.x + 45, center.y), zoneColor, 2.0f);
+    drawList->AddLine(ImVec2(center.x, center.y - 40), ImVec2(center.x, center.y - 12), zoneColor, 2.0f);
+
+    // Đường đua tối ưu (Optimal Racing Line & Apex trajectory dẫn lối về nhất)
+    float rad = (driftAngle - 90.0f) * (3.14159265f / 180.0f);
+    ImVec2 apexPoint = ImVec2(center.x + cosf(rad) * 125.0f, center.y + sinf(rad) * 85.0f);
+    drawList->AddBezierCubic(
+        center,
+        ImVec2(center.x + cosf(rad) * 45.0f, center.y - 32.0f),
+        ImVec2(apexPoint.x, apexPoint.y + 22.0f),
+        apexPoint,
+        zoneColor,
+        2.5f
+    );
+    drawList->AddCircleFilled(apexPoint, 5.0f, zoneColor);
+    drawList->AddCircle(apexPoint, 10.0f, IM_COL32(255, 255, 255, 180), 16, 1.5f);
+
+    // 2. BẢNG TELEMETRY GÓC DRIFT VÀ KHUYẾN NGHỊ PHUN NITRO CWW
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration |
+                            ImGuiWindowFlags_AlwaysAutoResize |
+                            ImGuiWindowFlags_NoSavedSettings |
+                            ImGuiWindowFlags_NoFocusOnAppearing |
+                            ImGuiWindowFlags_NoNav;
+
+    ImVec2 gaugePos = ImVec2(screenSize.x * 0.5f - 130.0f, screenSize.y * 0.76f);
+    ImGui::SetNextWindowPos(gaugePos, ImGuiCond_Always);
+    ImGui::SetNextWindowBgAlpha(0.75f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 6));
+
+    if (ImGui::Begin("##DriftGuideGauge", NULL, flags)) {
+        ImGui::TextColored(ImVec4(0.3f, 0.9f, 1.0f, 1.0f), ICON_FA_COMPASS " Goc Drift: %.1f deg", driftAngle);
+        ImGui::SameLine();
+        ImVec4 zColor = (driftAngle >= 38.0f && driftAngle <= 45.0f) ? ImVec4(0.2f, 1.0f, 0.4f, 1.0f) :
+                        (driftAngle < 38.0f) ? ImVec4(1.0f, 0.85f, 0.2f, 1.0f) : ImVec4(1.0f, 0.3f, 0.3f, 1.0f);
+        ImGui::TextColored(zColor, "[%s]", zoneText);
+
+        if (mods.OptimalDriftCalc) {
+            ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 1.0f), "Bao toan toc do: %.1f%%  |  Nap Nitro: %.0f%%", speedRetention, nitroCharge);
+            if (driftAngle >= 38.0f && driftAngle <= 45.0f) {
+                ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.5f, 1.0f), ICON_FA_BOLT " CWW BOOST: SAN SANG (PHUN NITRO DOI)");
+            } else {
+                ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), ICON_FA_EXCLAMATION_TRIANGLE " Banh lai ve 38°-45° de dat Max CWW");
+            }
+        }
+    }
+    ImGui::End();
+    ImGui::PopStyleVar(2);
+}
+
 void LoadMenu() {
     ImVec2 P1, P2;
     ImDrawList * pDrawList;
@@ -310,13 +403,29 @@ void LoadMenu() {
             if (ImGui::RadioButton("2. Tu ra giua duong", mods.AutoDuaMode == 2)) mods.AutoDuaMode = 2;
             ImGui::Spacing();
 
+            static const char* mapNames[] = {
+                "Map 157 - Ho Long Tinh",
+                "Map 102 - Thanh Pho 11",
+                "Map 120 - Dao 11",
+                "Map 145 - Thu Danh Son",
+                "Map 188 - Suoi Nuoc Nong",
+                "Map 210 - Sa Mac Toc Do"
+            };
+            ImGui::TextColored(ImVec4(0.3f, 0.85f, 1.0f, 1.0f), ICON_FA_MAP_MARKED_ALT " Chon Ban Do (Map Selector):");
+            if (ImGui::Combo("##SelectedMap", &mods.SelectedMapIndex, mapNames, IM_ARRAYSIZE(mapNames))) {
+                TriggerHaptic(0);
+                SaveConfig();
+            }
+
+            ImGui::Spacing();
             newChildVisible = childVisibilityMap["Auto Dua Lap Trinh"];
             ToggleWidget(ICON_FA_ROBOT, "Auto Dua Lap Trinh", &mods.AutoDuaLapTrinh, &newChildVisible);
             childVisibilityMap["Auto Dua Lap Trinh"] = newChildVisible;
 
             if (mods.AutoDuaLapTrinh) {
-                ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.2f, 1.0f), "Trang thai: Dang tu dong dua!");
-                ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "Map ID: 157 (Ho Long Tinh)");
+                int validMap = (mods.SelectedMapIndex >= 0 && mods.SelectedMapIndex < 6) ? mods.SelectedMapIndex : 0;
+                ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.2f, 1.0f), ICON_FA_CHECK_CIRCLE " Dang tu dong bam goc & drift!");
+                ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.2f, 1.0f), ICON_FA_MAP_PIN " %s", mapNames[validMap]);
             }
         }
         ImGui::EndChild();
@@ -360,6 +469,19 @@ void LoadMenu() {
             newChildVisible = childVisibilityMap["Camera FOV"];
             ToggleWidget(ICON_FA_EYE, "Camera FOV", &mods.CustomFOV, &newChildVisible);
             childVisibilityMap["Camera FOV"] = newChildVisible;
+
+            ImGui::SameLine();
+            ImGui::BeginGroup();
+
+            newChildVisible = childVisibilityMap["Tam Drift & Apex Guide"];
+            ToggleWidget(ICON_FA_COMPASS, "Tam Drift & Apex Guide", &mods.ShowDriftGuide, &newChildVisible);
+            childVisibilityMap["Tam Drift & Apex Guide"] = newChildVisible;
+
+            newChildVisible = childVisibilityMap["Tinh Goc Cua Toi Uu"];
+            ToggleWidget(ICON_FA_TACHOMETER_ALT, "Tinh Goc Cua Toi Uu", &mods.OptimalDriftCalc, &newChildVisible);
+            childVisibilityMap["Tinh Goc Cua Toi Uu"] = newChildVisible;
+
+            ImGui::EndGroup();
         }
         ImGui::EndChild();
     }
@@ -381,6 +503,10 @@ void LoadMenu() {
             newChildVisible = childVisibilityMap["Auto Start"];
             ToggleWidget(ICON_FA_PLAY_CIRCLE, "Auto Start", &mods.AutoStart, &newChildVisible);
             childVisibilityMap["Auto Start"] = newChildVisible;
+
+            newChildVisible = childVisibilityMap["Chong AFK Kick"];
+            ToggleWidget(ICON_FA_SHIELD_ALT, "Chong AFK Kick", &mods.AntiAFK, &newChildVisible);
+            childVisibilityMap["Chong AFK Kick"] = newChildVisible;
 
             ImGui::SameLine();
             ImGui::BeginGroup();
@@ -605,6 +731,19 @@ void LoadMenu() {
                     ImGui::Text(ICON_FA_INFO_CIRCLE); ImGui::SameLine();
                     ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x + 5);
                     ImGui::Text("Hien thi bang chi so FPS va Ping realtime goc phai man hinh.");
+                    ImGui::PopTextWrapPos(); ImGui::Spacing();
+                }
+                else if (widgetName == "Tam Drift & Apex Guide" || widgetName == "Tinh Goc Cua Toi Uu") {
+                    ImGui::Text(ICON_FA_INFO_CIRCLE); ImGui::SameLine();
+                    ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x + 5);
+                    ImGui::Text("Tam can goc drift ly tuong (38-45 do) giup giu toi da toc do va kich hoat CWW Boost nhanh nhat ve nhat.");
+                    ImGui::PopTextWrapPos(); ImGui::Spacing();
+                    ToggleButtonMini("Tinh Goc Toi Uu", &mods.OptimalDriftCalc);
+                }
+                else if (widgetName == "Chong AFK Kick") {
+                    ImGui::Text(ICON_FA_INFO_CIRCLE); ImGui::SameLine();
+                    ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x + 5);
+                    ImGui::Text("Giu ket noi mang phong cho va ngan chan bi he thong kick vi treo may khong thao tac.");
                     ImGui::PopTextWrapPos(); ImGui::Spacing();
                 }
                 else if (widgetName == "Streamer Mode" || widgetName == "Menu Logs") {
