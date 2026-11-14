@@ -21,6 +21,10 @@
 ## ⚡ Các tính năng nổi bật (Features)
 
 ### 🏎️ Tab 0: Đua Xe Cơ Bản & Auto Lái Nâng Cao (Racing & Auto Drive)
+- **Thuật Toán Bám Quỹ Đạo Pure Pursuit (Adaptive Lookahead):** Tính toán độ cong $\kappa = \frac{2\sin(\alpha)}{L}$ theo khoảng cách nhìn trước $L = k \cdot v_{\text{xe}}$, tự động thu ngắn khi vào cua gấp và giãn dài khi chạy đường thẳng tốc độ cao.
+- **Bộ Điều Khiển Bẻ Lái PID (PID Steering Controller):** Triệt tiêu hoàn toàn sai số khoảng cách lệch tâm tim đường $e(t)$, chống triệt để hiện tượng rung lắc/rắn bò khi chạy tốc độ $>300\text{ km/h}$. Tùy biến trực tiếp $K_p, K_i, K_d$.
+- **Bộ Nội Suy Đường Đua Catmull-Rom Cubic Spline:** Làm mịn chuỗi tọa độ mốc cua bằng đa thức bậc 3 liên tục trơn mượt $C^1$, triệt tiêu hiện tượng giật góc khi chuyển mốc.
+- **Mô Hình Slip Angle & Dự Đoán Frame CWW:** Tính toán góc trượt ngang $\beta = \arctan(v_y/v_x)$ và tích phân năng lượng Nitro, dự đoán chính xác mili-giây nhả Drift để kích hoạt CWW Boost kép đạt hiệu suất 100%.
 - **Quỹ Đạo Ôm Cua Chuyên Nghiệp (Apex Out-In-Out Line):** Tùy chọn 3 chế độ chạy tự động: *1. Đường hướng dẫn*, *2. Ra giữa đường*, *3. Quỹ đạo Apex Out-In-Out* (bám sát mép ngoài trước cua $\rightarrow$ cắt sát vách cua trong $\rightarrow$ văng ngoài thoát cua đạt tốc độ cao nhất).
 - **Trợ Lực Tự Bẻ Lái Apex & Trả Thẳng (Auto Apex Counter-Steering):** Tự động điều chỉnh góc xoay bánh xe vào góc vàng drift $38^\circ - 45^\circ$, tự động trả thẳng lái ngay khi hết cua giúp triệt tiêu văng xe và chống cọ mép tường.
 - **Tự Động Kích Hoạt Combo CWW (Auto CWW Sequence):** Tự động canh đúng nhịp thoát cua để kích hoạt chuỗi kép Nitro + Mini Boost đôi (chuẩn combo CWW/WCW của tuyển thủ chuyên nghiệp).

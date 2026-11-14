@@ -14,6 +14,31 @@ struct GameOffsets {
     bool isLoadedFromFile = false;
 };
 
+struct PIDState {
+    float prevError = 0.0f;
+    float integral = 0.0f;
+    float output = 0.0f;
+
+    float Update(float error, float dt, float kp, float ki, float kd) {
+        if (dt <= 0.0f) dt = 0.016f;
+        integral += error * dt;
+        if (integral > 10.0f) integral = 10.0f;
+        if (integral < -10.0f) integral = -10.0f;
+        float derivative = (error - prevError) / dt;
+        prevError = error;
+        output = (kp * error) + (ki * integral) + (kd * derivative);
+        return output;
+    }
+
+    void Reset() {
+        prevError = 0.0f;
+        integral = 0.0f;
+        output = 0.0f;
+    }
+};
+
+extern PIDState g_steeringPID;
+
 struct Mods {
     // Tab Cơ Bản (Racing)
     bool TeleportAuto = false;
@@ -38,6 +63,16 @@ struct Mods {
     bool AutoCWWSequence = true; // Tự động combo chuỗi CWW khi thoát cua
     float DriftAssistanceLevel = 1.5f; // Độ nhạy trợ lực drift (1.0f - 3.0f)
     int RacingLineType = 0; // 0: Out-In-Out (Tối ưu), 1: Cắt ngắn (Short-Cut), 2: An toàn (Safe Line)
+
+    // Thuật Toán Điều Khiển Học & Động Lực Học (Advanced Racing Algorithms)
+    bool UsePurePursuit = true;       // Thuật toán Pure Pursuit bám quỹ đạo động
+    bool UsePIDController = true;      // Bộ điều khiển vi tích phân PID lái mượt
+    bool UseSplineInterpolation = true;// Nội suy đường cong trơn mượt Catmull-Rom Spline
+    bool PredictCWWMillisecond = true; // Dự đoán chính xác mili-giây nhả Drift kích hoạt CWW
+    float PID_Kp = 1.25f;              // Hệ số tỉ lệ P (bẻ lái nhanh về tim đường)
+    float PID_Ki = 0.05f;              // Hệ số tích phân I (triệt tiêu trôi dạt)
+    float PID_Kd = 0.45f;              // Hệ số vi phân D (triệt tiêu rung lắc / rắn bò)
+    float LookaheadRatio = 0.22f;      // Tỉ lệ khoảng cách nhìn trước L = k * v
     
     // Tab Nhân Vật / Xe
     bool KySinh = false;
@@ -94,5 +129,13 @@ bool ImportConfigFromClipboard();
 void LoadDynamicOffsets();
 void SaveDefaultOffsetsFile();
 void ResetMatchTimer();
+
+struct Vector2D {
+    float x;
+    float y;
+};
+
+Vector2D EvaluateCatmullRom(Vector2D p0, Vector2D p1, Vector2D p2, Vector2D p3, float t);
+float ComputePurePursuitSteering(float currentX, float currentZ, float currentYaw, float targetX, float targetZ, float speed);
 
 #endif

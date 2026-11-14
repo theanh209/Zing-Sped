@@ -272,6 +272,14 @@ void RenderDriftGuide() {
                 ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), ICON_FA_EXCLAMATION_TRIANGLE " Banh lai ve 38°-45° de dat Max CWW");
             }
         }
+
+        if (mods.UsePurePursuit) {
+            float simL = mods.LookaheadRatio * 225.0f;
+            ImGui::TextColored(ImVec4(0.4f, 0.9f, 1.0f, 1.0f), ICON_FA_ROBOT " Pure Pursuit: L = %.1fm | PID Active", simL);
+        }
+        if (mods.UseSplineInterpolation) {
+            ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.4f, 1.0f), ICON_FA_CHART_LINE " Catmull-Rom: C1 Spline Smooth");
+        }
     }
     ImGui::End();
     ImGui::PopStyleVar(2);
@@ -530,6 +538,14 @@ void LoadMenu() {
             newChildVisible = childVisibilityMap["Tu Dong Combo CWW"];
             ToggleWidget(ICON_FA_BOLT, "Tu Dong Combo CWW", &mods.AutoCWWSequence, &newChildVisible);
             childVisibilityMap["Tu Dong Combo CWW"] = newChildVisible;
+
+            newChildVisible = childVisibilityMap["Thuat Toan Pure Pursuit & PID"];
+            ToggleWidget(ICON_FA_MICROCHIP, "Thuat Toan Pure Pursuit & PID", &mods.UsePurePursuit, &newChildVisible);
+            childVisibilityMap["Thuat Toan Pure Pursuit & PID"] = newChildVisible;
+
+            newChildVisible = childVisibilityMap["Noi Suy Spline & Du Doan CWW"];
+            ToggleWidget(ICON_FA_CHART_LINE, "Noi Suy Spline & Du Doan CWW", &mods.UseSplineInterpolation, &newChildVisible);
+            childVisibilityMap["Noi Suy Spline & Du Doan CWW"] = newChildVisible;
 
             if (mods.AutoDuaLapTrinh) {
                 int validMap = (mods.SelectedMapIndex >= 0 && mods.SelectedMapIndex < 6) ? mods.SelectedMapIndex : 0;
@@ -884,6 +900,26 @@ void LoadMenu() {
                     ImGui::Text("Tu dong kich hoat combo phun nitro kep CWW/WCW ngay khi thoat cua.");
                     ImGui::PopTextWrapPos(); ImGui::Spacing();
                     ToggleButtonMini("Kich Hoat CWW", &mods.AutoCWWSequence);
+                }
+                else if (widgetName == "Thuat Toan Pure Pursuit & PID") {
+                    ImGui::Text(ICON_FA_INFO_CIRCLE); ImGui::SameLine();
+                    ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x + 5);
+                    ImGui::Text("Thuat toan Pure Pursuit ket hop bo dieu khien PID triet tieu dao dong lech tim duong.");
+                    ImGui::PopTextWrapPos(); ImGui::Spacing();
+                    ToggleButtonMini("Kich Hoat Pure Pursuit", &mods.UsePurePursuit);
+                    ToggleButtonMini("Bo Dieu Khien PID", &mods.UsePIDController);
+                    SliderFloatMini("He So Kp (Ti Le)", &mods.PID_Kp, 0.1f, 3.0f);
+                    SliderFloatMini("He So Ki (Tich Phan)", &mods.PID_Ki, 0.0f, 0.3f);
+                    SliderFloatMini("He So Kd (Vi Phan)", &mods.PID_Kd, 0.0f, 1.5f);
+                    SliderFloatMini("Lookahead Ratio", &mods.LookaheadRatio, 0.1f, 0.5f);
+                }
+                else if (widgetName == "Noi Suy Spline & Du Doan CWW") {
+                    ImGui::Text(ICON_FA_INFO_CIRCLE); ImGui::SameLine();
+                    ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x + 5);
+                    ImGui::Text("Noi suy da thuc bac 3 Catmull-Rom giup duong chay mem mai va du doan chinh xac frame nhan nut CWW.");
+                    ImGui::PopTextWrapPos(); ImGui::Spacing();
+                    ToggleButtonMini("Noi Suy Spline", &mods.UseSplineInterpolation);
+                    ToggleButtonMini("Du Doan CWW (ms)", &mods.PredictCWWMillisecond);
                 }
                 else if (widgetName == "Tam Drift & Apex Guide" || widgetName == "Tinh Goc Cua Toi Uu") {
                     ImGui::Text(ICON_FA_INFO_CIRCLE); ImGui::SameLine();
