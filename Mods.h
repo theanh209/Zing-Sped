@@ -47,10 +47,13 @@ struct Mods {
     float CameraFOV = 60.0f; // Mặc định 60.0f, range 45.0f - 120.0f
     bool ShowDriftGuide = true; // Tâm ngắm & Thước đo góc Drift
     bool OptimalDriftCalc = true; // Tính toán góc chạy & drift tối ưu về nhất
+    bool ShowSpeedometer = true;  // Đồng hồ đo tốc độ điện tử (Cyber Speedometer)
+    bool CWWMetronome = true;     // Âm & rung báo nhịp CWW Boost khi vào vùng vàng
 
     // Tab Tiện Ích & Phòng Chờ (Tab 3)
     bool ShowHUD = true;          // Hiển thị HUD FPS / Ping
     bool ShowMatchTimer = true;   // Hiển thị đồng hồ bấm giờ trận
+    bool ShowHardwareStats = true;// Đo RAM và Pin thời gian thực
     bool AutoReady = false;        // Tự động bấm Sẵn sàng phòng chờ
     bool AutoStart = false;        // Tự động bấm bắt đầu
     bool AntiAFK = true;          // Chống treo máy kick khỏi phòng chờ
@@ -80,6 +83,9 @@ void ApplyTheme(int preset);
 void InitAntiReport();
 void RenderHUD();
 void RenderDriftGuide();
+void RenderSpeedometer();
+bool ExportConfigToClipboard();
+bool ImportConfigFromClipboard();
 void LoadDynamicOffsets();
 void SaveDefaultOffsetsFile();
 void ResetMatchTimer();

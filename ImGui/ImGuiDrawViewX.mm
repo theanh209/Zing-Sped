@@ -177,6 +177,10 @@ extern MenuInteraction* menuTouchView;
             RenderDriftGuide();
         }
 
+        if (mods.ShowSpeedometer) {
+            RenderSpeedometer();
+        }
+
         ImGui::EndFrame();
         ImGui::Render();
         ImDrawData *drawData = ImGui::GetDrawData();

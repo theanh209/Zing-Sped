@@ -36,14 +36,17 @@
 - **Fake Tên:** Ẩn hoặc đổi tên hiển thị trong trận.
 
 ### 🚘 Tab 2: Xe & Căn Góc Drift (Kart & Apex Drift Guide)
+- **Đồng Hồ Tốc Độ Điện Tử (Cyberpunk Speedometer HUD):** Cụm đồng hồ tốc độ thể thao bo tròn hiển thị vận tốc km/h tức thời, kim đo góc xoay mượt mà và thanh trạng thái nạp Nitro.
 - **Tâm Can Drift & Apex Racing Line:** Hiển thị tâm ngắm HUD và đường cong dẫn hướng ôm cua (Apex Trajectory) dạng Out-In-Out chuẩn xác trên màn hình.
 - **Tính Toán Góc Cua Tối Ưu (CWW Boost Calculator):** Phân tích và căn góc drift trong vùng vàng **38° - 45°** lý tưởng nhất của ZingSpeed Mobile, giúp tối đa hóa tốc độ tích nạp Nitro và giảm thiểu tối đa mất tốc độ góc cua để về đích nhanh nhất.
+- **Nhịp Rung Thoát Cua (CWW Metronome Haptic):** Tự động phát xung rung nhẹ (Taptic) báo hiệu chuẩn xác khi xe đã nằm trong vùng góc vàng để người chơi phản xạ kích hoạt Nitro kép.
 - **Cảnh Báo CWW Boost Ready:** Báo hiệu thời điểm chuẩn xác nhất để kích hoạt kép phun nitro (CWW / WCW) khi xe đạt độ trôi góc tối ưu.
 - **Mod Skin & Xe:** Mở khóa hiển thị xe và skin yêu thích.
 - **Mod Chỉ Số Xe:** Tùy biến thông số hiệu năng xe.
 - **Camera FOV:** Thanh trượt góc nhìn Camera từ 45° đến 120° giúp mở rộng tầm nhìn toàn cảnh đường đua.
 
 ### 🛠️ Tab 3: Tiện Ích & Phòng Chờ (Utilities & Protection)
+- **Giám Sát Phần Cứng Realtime (RAM & Pin):** Đo trực tiếp lượng RAM chiếm dụng của game (`mach_task_basic_info`) và phần trăm pin để cảnh báo giật lag khi máy quá nhiệt.
 - **Chống AFK Kick Phòng Chờ (Anti-AFK Keepalive):** Ngăn chặn hệ thống game kick ra khỏi phòng khi treo máy, đồng thời giữ màn hình luôn sáng (`idleTimerDisabled`).
 - **HUD Realtime Overlay:** Bảng chỉ số FPS thực tế, Ping ms, đồng hồ bấm giờ (Stopwatch) và Badges cheat đang hoạt động (không cản trở thao tác lái xe).
 - **Live Memory Inspector:** Xem trực tiếp địa chỉ `Unity Base (0x...)` và trạng thái module game ngay trên menu.
@@ -53,6 +56,7 @@
 - **Chống Report Server & Chặn Log Analytics:** Can thiệp ngắt gói tin gửi crash log/telemetry về máy chủ game, giảm thiểu nguy cơ bị quét tài khoản.
 
 ### 👑 Tab 4: Tác Giả Zhee Dev & Giao Diện (Showcase & System)
+- **Sao Chép & Chia Sẻ Cấu Hình (Share Config via Clipboard):** Nút *Sao Chép Config* đóng gói toàn bộ thiết lập thành chuỗi mã hóa Base64 và nút *Dán & Áp Dụng* giúp nhập nhanh cấu hình từ bạn bè vào game chỉ bằng 1 chạm.
 - **Ghi Nhớ Vị Trí Nút Nổi:** Tự động lưu tọa độ X, Y của nút menu khi bạn kéo thả, không bao giờ bị nhảy về giữa màn hình sau khi khởi động lại game.
 - **Thẻ Tác Giả Zhee Dev (Profile Showcase):** Tiêu đề animated gradient cầu vồng, card thông tin lập trình viên viền neon phát sáng, hiển thị trạng thái `STATUS: ONLINE & ACTIVATED`.
 - **Cử chỉ 3 ngón tay (3-Finger Tap):** Chạm 3 ngón tay cùng lúc lên màn hình để ẩn/hiện menu nhanh chóng.

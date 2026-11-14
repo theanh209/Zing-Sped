@@ -241,6 +241,7 @@ void SaveConfig() {
     // Config mới
     [defaults setBool:mods.ShowHUD forKey:@"zst_ShowHUD"];
     [defaults setBool:mods.ShowMatchTimer forKey:@"zst_ShowMatchTimer"];
+    [defaults setBool:mods.ShowHardwareStats forKey:@"zst_ShowHardwareStats"];
     [defaults setBool:mods.AutoReady forKey:@"zst_AutoReady"];
     [defaults setBool:mods.AutoStart forKey:@"zst_AutoStart"];
     [defaults setBool:mods.AntiAFK forKey:@"zst_AntiAFK"];
@@ -254,6 +255,8 @@ void SaveConfig() {
     [defaults setInteger:mods.SelectedMapIndex forKey:@"zst_SelectedMapIndex"];
     [defaults setBool:mods.ShowDriftGuide forKey:@"zst_ShowDriftGuide"];
     [defaults setBool:mods.OptimalDriftCalc forKey:@"zst_OptimalDriftCalc"];
+    [defaults setBool:mods.ShowSpeedometer forKey:@"zst_ShowSpeedometer"];
+    [defaults setBool:mods.CWWMetronome forKey:@"zst_CWWMetronome"];
     [defaults setFloat:mods.IconSize forKey:@"zst_IconSize"];
     [defaults setFloat:mods.IconOpacity forKey:@"zst_IconOpacity"];
     [defaults synchronize];
@@ -286,11 +289,14 @@ void LoadConfig() {
         mods.CameraFOV = [defaults floatForKey:@"zst_CameraFOV"];
         mods.ShowDriftGuide = [defaults boolForKey:@"zst_ShowDriftGuide"];
         mods.OptimalDriftCalc = [defaults boolForKey:@"zst_OptimalDriftCalc"];
+        mods.ShowSpeedometer = [defaults boolForKey:@"zst_ShowSpeedometer"];
+        mods.CWWMetronome = [defaults boolForKey:@"zst_CWWMetronome"];
         
         // Config mới
         if ([defaults objectForKey:@"zst_ShowHUD"] != nil) {
             mods.ShowHUD = [defaults boolForKey:@"zst_ShowHUD"];
             mods.ShowMatchTimer = [defaults boolForKey:@"zst_ShowMatchTimer"];
+            mods.ShowHardwareStats = [defaults boolForKey:@"zst_ShowHardwareStats"];
             mods.AutoReady = [defaults boolForKey:@"zst_AutoReady"];
             mods.AutoStart = [defaults boolForKey:@"zst_AutoStart"];
             mods.AntiAFK = [defaults boolForKey:@"zst_AntiAFK"];
@@ -307,6 +313,109 @@ void LoadConfig() {
             if (mods.IconOpacity < 0.1f) mods.IconOpacity = 0.7f;
         }
     }
+}
+
+bool ExportConfigToClipboard() {
+    NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+    dict[@"TeleportAuto"] = @(mods.TeleportAuto);
+    dict[@"TeleportButton"] = @(mods.TeleportButton);
+    dict[@"MiniBoot"] = @(mods.MiniBoot);
+    dict[@"ThoatNhanh"] = @(mods.ThoatNhanh);
+    dict[@"VoHanNitro"] = @(mods.VoHanNitro);
+    dict[@"NitroNhanh"] = @(mods.NitroNhanh);
+    dict[@"ECU3Luot"] = @(mods.ECU3Luot);
+    dict[@"TuDuaXe"] = @(mods.TuDuaXe);
+    dict[@"GiaToc"] = @(mods.GiaToc);
+    dict[@"GiaTocSpeed"] = @(mods.GiaTocSpeed);
+    dict[@"NitroDuration"] = @(mods.NitroDuration);
+    dict[@"AutoDuaMode"] = @(mods.AutoDuaMode);
+    dict[@"AutoDuaLapTrinh"] = @(mods.AutoDuaLapTrinh);
+    dict[@"SelectedMapIndex"] = @(mods.SelectedMapIndex);
+    dict[@"CustomFOV"] = @(mods.CustomFOV);
+    dict[@"CameraFOV"] = @(mods.CameraFOV);
+    dict[@"ShowDriftGuide"] = @(mods.ShowDriftGuide);
+    dict[@"OptimalDriftCalc"] = @(mods.OptimalDriftCalc);
+    dict[@"ShowSpeedometer"] = @(mods.ShowSpeedometer);
+    dict[@"CWWMetronome"] = @(mods.CWWMetronome);
+    dict[@"ShowHUD"] = @(mods.ShowHUD);
+    dict[@"ShowMatchTimer"] = @(mods.ShowMatchTimer);
+    dict[@"ShowHardwareStats"] = @(mods.ShowHardwareStats);
+    dict[@"AutoReady"] = @(mods.AutoReady);
+    dict[@"AutoStart"] = @(mods.AutoStart);
+    dict[@"AntiAFK"] = @(mods.AntiAFK);
+    dict[@"AntiCollision"] = @(mods.AntiCollision);
+    dict[@"HapticFeedback"] = @(mods.HapticFeedback);
+    dict[@"SoundEffects"] = @(mods.SoundEffects);
+    dict[@"GestureShortcut"] = @(mods.GestureShortcut);
+    dict[@"ThemePreset"] = @(mods.ThemePreset);
+    dict[@"IconSize"] = @(mods.IconSize);
+    dict[@"IconOpacity"] = @(mods.IconOpacity);
+
+    NSError *err = nil;
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict options:0 error:&err];
+    if (jsonData && !err) {
+        NSString *base64 = [jsonData base64EncodedStringWithOptions:0];
+        NSString *shareCode = [NSString stringWithFormat:@"ZSTCFG:%@", base64];
+        [UIPasteboard generalPasteboard].string = shareCode;
+        TriggerHaptic(3);
+        PlayBeepSound(1057);
+        return true;
+    }
+    return false;
+}
+
+bool ImportConfigFromClipboard() {
+    NSString *pasteStr = [UIPasteboard generalPasteboard].string;
+    if (!pasteStr || ![pasteStr hasPrefix:@"ZSTCFG:"]) {
+        return false;
+    }
+
+    NSString *base64 = [pasteStr substringFromIndex:7];
+    NSData *data = [[NSData alloc] initWithBase64EncodedString:base64 options:0];
+    if (!data) return false;
+
+    NSError *err = nil;
+    NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:data options:0 error:&err];
+    if (!dict || err || ![dict isKindOfClass:[NSDictionary class]]) return false;
+
+    if (dict[@"TeleportAuto"]) mods.TeleportAuto = [dict[@"TeleportAuto"] boolValue];
+    if (dict[@"TeleportButton"]) mods.TeleportButton = [dict[@"TeleportButton"] boolValue];
+    if (dict[@"MiniBoot"]) mods.MiniBoot = [dict[@"MiniBoot"] boolValue];
+    if (dict[@"ThoatNhanh"]) mods.ThoatNhanh = [dict[@"ThoatNhanh"] boolValue];
+    if (dict[@"VoHanNitro"]) mods.VoHanNitro = [dict[@"VoHanNitro"] boolValue];
+    if (dict[@"NitroNhanh"]) mods.NitroNhanh = [dict[@"NitroNhanh"] boolValue];
+    if (dict[@"ECU3Luot"]) mods.ECU3Luot = [dict[@"ECU3Luot"] boolValue];
+    if (dict[@"TuDuaXe"]) mods.TuDuaXe = [dict[@"TuDuaXe"] boolValue];
+    if (dict[@"GiaToc"]) mods.GiaToc = [dict[@"GiaToc"] boolValue];
+    if (dict[@"GiaTocSpeed"]) mods.GiaTocSpeed = [dict[@"GiaTocSpeed"] floatValue];
+    if (dict[@"NitroDuration"]) mods.NitroDuration = [dict[@"NitroDuration"] floatValue];
+    if (dict[@"AutoDuaMode"]) mods.AutoDuaMode = [dict[@"AutoDuaMode"] intValue];
+    if (dict[@"AutoDuaLapTrinh"]) mods.AutoDuaLapTrinh = [dict[@"AutoDuaLapTrinh"] boolValue];
+    if (dict[@"SelectedMapIndex"]) mods.SelectedMapIndex = [dict[@"SelectedMapIndex"] intValue];
+    if (dict[@"CustomFOV"]) mods.CustomFOV = [dict[@"CustomFOV"] boolValue];
+    if (dict[@"CameraFOV"]) mods.CameraFOV = [dict[@"CameraFOV"] floatValue];
+    if (dict[@"ShowDriftGuide"]) mods.ShowDriftGuide = [dict[@"ShowDriftGuide"] boolValue];
+    if (dict[@"OptimalDriftCalc"]) mods.OptimalDriftCalc = [dict[@"OptimalDriftCalc"] boolValue];
+    if (dict[@"ShowSpeedometer"]) mods.ShowSpeedometer = [dict[@"ShowSpeedometer"] boolValue];
+    if (dict[@"CWWMetronome"]) mods.CWWMetronome = [dict[@"CWWMetronome"] boolValue];
+    if (dict[@"ShowHUD"]) mods.ShowHUD = [dict[@"ShowHUD"] boolValue];
+    if (dict[@"ShowMatchTimer"]) mods.ShowMatchTimer = [dict[@"ShowMatchTimer"] boolValue];
+    if (dict[@"ShowHardwareStats"]) mods.ShowHardwareStats = [dict[@"ShowHardwareStats"] boolValue];
+    if (dict[@"AutoReady"]) mods.AutoReady = [dict[@"AutoReady"] boolValue];
+    if (dict[@"AutoStart"]) mods.AutoStart = [dict[@"AutoStart"] boolValue];
+    if (dict[@"AntiAFK"]) mods.AntiAFK = [dict[@"AntiAFK"] boolValue];
+    if (dict[@"AntiCollision"]) mods.AntiCollision = [dict[@"AntiCollision"] boolValue];
+    if (dict[@"HapticFeedback"]) mods.HapticFeedback = [dict[@"HapticFeedback"] boolValue];
+    if (dict[@"SoundEffects"]) mods.SoundEffects = [dict[@"SoundEffects"] boolValue];
+    if (dict[@"GestureShortcut"]) mods.GestureShortcut = [dict[@"GestureShortcut"] boolValue];
+    if (dict[@"ThemePreset"]) mods.ThemePreset = [dict[@"ThemePreset"] intValue];
+    if (dict[@"IconSize"]) mods.IconSize = [dict[@"IconSize"] floatValue];
+    if (dict[@"IconOpacity"]) mods.IconOpacity = [dict[@"IconOpacity"] floatValue];
+
+    SaveConfig();
+    TriggerHaptic(3);
+    PlayBeepSound(1057);
+    return true;
 }
 
 void ResetConfig() {

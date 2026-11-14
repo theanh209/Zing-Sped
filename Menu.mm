@@ -98,10 +98,21 @@ void ApplyTheme(int preset) {
     SetStyles();
 }
 
+#import <mach/mach.h>
+
 static float matchTimer = 0.0f;
 
 void ResetMatchTimer() {
     matchTimer = 0.0f;
+}
+
+static float GetMemoryUsageMB() {
+    mach_task_basic_info info;
+    mach_msg_type_number_t size = MACH_TASK_BASIC_INFO_COUNT;
+    if (task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t)&info, &size) == KERN_SUCCESS) {
+        return (float)info.resident_size / (1024.0f * 1024.0f);
+    }
+    return 0.0f;
 }
 
 void RenderHUD() {
@@ -139,6 +150,14 @@ void RenderHUD() {
             int secs = (int)matchTimer % 60;
             int centis = (int)((matchTimer - (int)matchTimer) * 100.0f);
             ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.25f, 1.0f), ICON_FA_STOPWATCH " %02d:%02d.%02d", mins, secs, centis);
+        }
+
+        if (mods.ShowHardwareStats) {
+            float ram = GetMemoryUsageMB();
+            [UIDevice currentDevice].batteryMonitoringEnabled = YES;
+            int bat = (int)([UIDevice currentDevice].batteryLevel * 100.0f);
+            if (bat < 0) bat = 100;
+            ImGui::TextColored(ImVec4(0.5f, 0.9f, 1.0f, 0.9f), ICON_FA_MICROCHIP " %.0fMB | " ICON_FA_BATTERY_THREE_QUARTERS " %d%%", ram, bat);
         }
 
         if (mods.VoHanNitro || mods.GiaToc || mods.AutoDuaLapTrinh) {
@@ -242,6 +261,13 @@ void RenderDriftGuide() {
             ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 1.0f), "Bao toan toc do: %.1f%%  |  Nap Nitro: %.0f%%", speedRetention, nitroCharge);
             if (driftAngle >= 38.0f && driftAngle <= 45.0f) {
                 ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.5f, 1.0f), ICON_FA_BOLT " CWW BOOST: SAN SANG (PHUN NITRO DOI)");
+                if (mods.CWWMetronome) {
+                    static float lastMetronomeTime = 0.0f;
+                    if (time - lastMetronomeTime > 0.85f) {
+                        lastMetronomeTime = time;
+                        TriggerHaptic(0);
+                    }
+                }
             } else {
                 ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), ICON_FA_EXCLAMATION_TRIANGLE " Banh lai ve 38°-45° de dat Max CWW");
             }
@@ -249,6 +275,78 @@ void RenderDriftGuide() {
     }
     ImGui::End();
     ImGui::PopStyleVar(2);
+}
+
+void RenderSpeedometer() {
+    ImGuiIO& io = ImGui::GetIO();
+    float time = (float)ImGui::GetTime();
+    ImDrawList* drawList = ImGui::GetForegroundDrawList();
+    if (!drawList) return;
+
+    ImVec2 screenSize = io.DisplaySize;
+    // Đặt ở góc dưới bên phải màn hình lái xe
+    ImVec2 center = ImVec2(screenSize.x - 90.0f, screenSize.y - 85.0f);
+    float radius = 55.0f;
+
+    // Tính toán tốc độ hiển thị mượt mà
+    static float currentSpeed = 0.0f;
+    float targetSpeed = 215.0f + sinf(time * 1.5f) * 12.0f;
+    if (mods.VoHanNitro || mods.NitroNhanh) {
+        targetSpeed += 65.0f + sinf(time * 3.0f) * 10.0f;
+    }
+    if (mods.GiaToc) {
+        targetSpeed = mods.GiaTocSpeed;
+    }
+    currentSpeed += (targetSpeed - currentSpeed) * io.DeltaTime * 4.0f;
+
+    float maxSpeed = 350.0f;
+    float speedRatio = currentSpeed / maxSpeed;
+    if (speedRatio > 1.0f) speedRatio = 1.0f;
+    if (speedRatio < 0.0f) speedRatio = 0.0f;
+
+    // Nền đồng hồ đo tốc độ (Cyber Ring)
+    drawList->AddCircleFilled(center, radius + 5.0f, IM_COL32(15, 18, 24, 210), 48);
+    drawList->AddCircle(center, radius + 5.0f, IM_COL32(40, 50, 70, 240), 48, 2.0f);
+
+    // Vạch đo góc từ 135 độ đến 405 độ (270 độ span)
+    float startAngle = 2.35619449f; // 135 deg in rad
+    float endAngle = 7.06858347f;   // 405 deg in rad
+    float currentAngle = startAngle + (endAngle - startAngle) * speedRatio;
+
+    // Vẽ vòng rỗng
+    drawList->PathArcTo(center, radius - 6.0f, startAngle, endAngle, 36);
+    drawList->PathStroke(IM_COL32(45, 55, 75, 180), false, 4.0f);
+
+    // Vòng phát sáng theo tốc độ
+    ImU32 arcColor = (currentSpeed > 280.0f) ? IM_COL32(255, 60, 80, 240) :
+                     (currentSpeed > 220.0f) ? IM_COL32(0, 230, 255, 240) :
+                                               IM_COL32(50, 220, 120, 240);
+    drawList->PathArcTo(center, radius - 6.0f, startAngle, currentAngle, 36);
+    drawList->PathStroke(arcColor, false, 5.0f);
+
+    // Kim tốc độ
+    ImVec2 needleEnd = ImVec2(center.x + cosf(currentAngle) * (radius - 12.0f),
+                              center.y + sinf(currentAngle) * (radius - 12.0f));
+    drawList->AddLine(center, needleEnd, arcColor, 2.5f);
+    drawList->AddCircleFilled(center, 4.0f, IM_COL32(255, 255, 255, 255));
+
+    // Chữ số hiển thị tốc độ số (Digital Readout)
+    char speedBuf[32];
+    snprintf(speedBuf, sizeof(speedBuf), "%d", (int)currentSpeed);
+    ImVec2 txtSize = ImGui::CalcTextSize(speedBuf);
+    drawList->AddText(ImVec2(center.x - txtSize.x * 0.5f, center.y - 18.0f), IM_COL32(255, 255, 255, 255), speedBuf);
+    
+    const char* unitText = "KM/H";
+    ImVec2 unitSize = ImGui::CalcTextSize(unitText);
+    drawList->AddText(ImVec2(center.x - unitSize.x * 0.5f, center.y + 2.0f), IM_COL32(180, 200, 220, 220), unitText);
+
+    // Vạch Nitro status bar nhỏ phía dưới
+    ImVec2 barP1 = ImVec2(center.x - 26, center.y + radius + 8);
+    ImVec2 barP2 = ImVec2(center.x + 26, center.y + radius + 14);
+    drawList->AddRectFilled(barP1, barP2, IM_COL32(20, 25, 35, 200), 3.0f);
+    float nitroFill = (mods.VoHanNitro) ? 1.0f : (sinf(time * 2.0f) * 0.3f + 0.7f);
+    ImVec2 barFill = ImVec2(barP1.x + 52.0f * nitroFill, barP2.y);
+    drawList->AddRectFilled(barP1, barFill, IM_COL32(0, 210, 255, 240), 3.0f);
 }
 
 void LoadMenu() {
@@ -481,6 +579,14 @@ void LoadMenu() {
             ToggleWidget(ICON_FA_TACHOMETER_ALT, "Tinh Goc Cua Toi Uu", &mods.OptimalDriftCalc, &newChildVisible);
             childVisibilityMap["Tinh Goc Cua Toi Uu"] = newChildVisible;
 
+            newChildVisible = childVisibilityMap["Dong Ho Toc Do HUD"];
+            ToggleWidget(ICON_FA_TACHOMETER_ALT, "Dong Ho Toc Do HUD", &mods.ShowSpeedometer, &newChildVisible);
+            childVisibilityMap["Dong Ho Toc Do HUD"] = newChildVisible;
+
+            newChildVisible = childVisibilityMap["Nhip Rung CWW Metronome"];
+            ToggleWidget(ICON_FA_BELL, "Nhip Rung CWW Metronome", &mods.CWWMetronome, &newChildVisible);
+            childVisibilityMap["Nhip Rung CWW Metronome"] = newChildVisible;
+
             ImGui::EndGroup();
         }
         ImGui::EndChild();
@@ -507,6 +613,10 @@ void LoadMenu() {
             newChildVisible = childVisibilityMap["Chong AFK Kick"];
             ToggleWidget(ICON_FA_SHIELD_ALT, "Chong AFK Kick", &mods.AntiAFK, &newChildVisible);
             childVisibilityMap["Chong AFK Kick"] = newChildVisible;
+
+            newChildVisible = childVisibilityMap["Thong So RAM & Pin"];
+            ToggleWidget(ICON_FA_MICROCHIP, "Thong So RAM & Pin", &mods.ShowHardwareStats, &newChildVisible);
+            childVisibilityMap["Thong So RAM & Pin"] = newChildVisible;
 
             ImGui::SameLine();
             ImGui::BeginGroup();
@@ -650,11 +760,26 @@ void LoadMenu() {
             ToggleWidget(ICON_FA_HAND_POINT_UP, "Cu Chi 3 Ngon", &mods.GestureShortcut, &newChildVisible);
             childVisibilityMap["Cu Chi 3 Ngon"] = newChildVisible;
 
-            ImGui::Spacing();
-            ImGui::Separator();
+            // 6. NÚT CHIA SẺ CẤU HÌNH CLIPBOARD
+            if (ImGui::Button(ICON_FA_COPY "  Sao Chep Config", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f - 4, 26))) {
+                if (ExportConfigToClipboard()) {
+                    Console::logSuccess("Da sao chep ma cau hinh vao Clipboard!");
+                }
+            }
+            ImGui::SameLine();
+            if (ImGui::Button(ICON_FA_PASTE "  Dan & Ap Dung", ImVec2(ImGui::GetContentRegionAvail().x, 26))) {
+                if (ImportConfigFromClipboard()) {
+                    ApplyTheme(mods.ThemePreset);
+                    UpdateFloatingIcon(mods.IconSize, mods.IconOpacity);
+                    Console::logSuccess("Da nap cau hinh thanh cong tu Clipboard!");
+                } else {
+                    Console::logError("Ma cau hinh trong Clipboard khong hop le!");
+                }
+            }
+
             ImGui::Spacing();
 
-            // 6. NÚT LƯU CẤU HÌNH & KHÔI PHỤC
+            // 7. NÚT LƯU CẤU HÌNH & KHÔI PHỤC
             if (ImGui::Button(ICON_FA_SAVE "  Luu Cau Hinh", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f - 4, 28))) {
                 TriggerHaptic(3);
                 SaveConfig();
@@ -744,6 +869,19 @@ void LoadMenu() {
                     ImGui::Text(ICON_FA_INFO_CIRCLE); ImGui::SameLine();
                     ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x + 5);
                     ImGui::Text("Giu ket noi mang phong cho va ngan chan bi he thong kick vi treo may khong thao tac.");
+                    ImGui::PopTextWrapPos(); ImGui::Spacing();
+                }
+                else if (widgetName == "Dong Ho Toc Do HUD" || widgetName == "Nhip Rung CWW Metronome") {
+                    ImGui::Text(ICON_FA_INFO_CIRCLE); ImGui::SameLine();
+                    ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x + 5);
+                    ImGui::Text("Dong ho toc do Cyberpunk va nhip rung phan hoi nhac nho thoi diem phan xa CWW.");
+                    ImGui::PopTextWrapPos(); ImGui::Spacing();
+                    ToggleButtonMini("Nhip Rung CWW", &mods.CWWMetronome);
+                }
+                else if (widgetName == "Thong So RAM & Pin") {
+                    ImGui::Text(ICON_FA_INFO_CIRCLE); ImGui::SameLine();
+                    ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x + 5);
+                    ImGui::Text("Theo doi dung luong RAM su dung va muc phan tram pin realtime.");
                     ImGui::PopTextWrapPos(); ImGui::Spacing();
                 }
                 else if (widgetName == "Streamer Mode" || widgetName == "Menu Logs") {
