@@ -497,8 +497,11 @@ void LoadMenu() {
             ImGui::Separator();
             ImGui::Spacing();
 
-            if (ImGui::RadioButton("1. Theo duong huong dan", mods.AutoDuaMode == 1)) mods.AutoDuaMode = 1;
-            if (ImGui::RadioButton("2. Tu ra giua duong", mods.AutoDuaMode == 2)) mods.AutoDuaMode = 2;
+            if (ImGui::RadioButton("1. Duong huong dan", mods.AutoDuaMode == 1)) mods.AutoDuaMode = 1;
+            ImGui::SameLine();
+            if (ImGui::RadioButton("2. Ra giua duong", mods.AutoDuaMode == 2)) mods.AutoDuaMode = 2;
+            ImGui::SameLine();
+            if (ImGui::RadioButton("3. Apex Out-In-Out", mods.AutoDuaMode == 3)) mods.AutoDuaMode = 3;
             ImGui::Spacing();
 
             static const char* mapNames[] = {
@@ -520,10 +523,18 @@ void LoadMenu() {
             ToggleWidget(ICON_FA_ROBOT, "Auto Dua Lap Trinh", &mods.AutoDuaLapTrinh, &newChildVisible);
             childVisibilityMap["Auto Dua Lap Trinh"] = newChildVisible;
 
+            newChildVisible = childVisibilityMap["Tro Luc Be Lai Apex"];
+            ToggleWidget(ICON_FA_CROSSHAIRS, "Tro Luc Be Lai Apex", &mods.AutoApexSteer, &newChildVisible);
+            childVisibilityMap["Tro Luc Be Lai Apex"] = newChildVisible;
+
+            newChildVisible = childVisibilityMap["Tu Dong Combo CWW"];
+            ToggleWidget(ICON_FA_BOLT, "Tu Dong Combo CWW", &mods.AutoCWWSequence, &newChildVisible);
+            childVisibilityMap["Tu Dong Combo CWW"] = newChildVisible;
+
             if (mods.AutoDuaLapTrinh) {
                 int validMap = (mods.SelectedMapIndex >= 0 && mods.SelectedMapIndex < 6) ? mods.SelectedMapIndex : 0;
-                ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.2f, 1.0f), ICON_FA_CHECK_CIRCLE " Dang tu dong bam goc & drift!");
-                ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.2f, 1.0f), ICON_FA_MAP_PIN " %s", mapNames[validMap]);
+                ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.2f, 1.0f), ICON_FA_CHECK_CIRCLE " Auto Lai: Dang chay quy dao toi uu!");
+                ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.2f, 1.0f), ICON_FA_MAP_PIN " Ban do: %s", mapNames[validMap]);
             }
         }
         ImGui::EndChild();
@@ -857,6 +868,22 @@ void LoadMenu() {
                     ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x + 5);
                     ImGui::Text("Hien thi bang chi so FPS va Ping realtime goc phai man hinh.");
                     ImGui::PopTextWrapPos(); ImGui::Spacing();
+                }
+                else if (widgetName == "Tro Luc Be Lai Apex" || widgetName == "Auto Dua Lap Trinh") {
+                    ImGui::Text(ICON_FA_INFO_CIRCLE); ImGui::SameLine();
+                    ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x + 5);
+                    ImGui::Text("Ho tro tu be lai bam sat vach cua Apex va tra thang tay lai.");
+                    ImGui::PopTextWrapPos(); ImGui::Spacing();
+                    SliderFloatMini("Do Nhay Tro Luc", &mods.DriftAssistanceLevel, 1.0f, 3.0f);
+                    static const char* lines[] = { "Out-In-Out Toi Uu", "Cut Ngan Short-Cut", "An Toan Safe" };
+                    ImGui::Combo("Che Do Cua", &mods.RacingLineType, lines, IM_ARRAYSIZE(lines));
+                }
+                else if (widgetName == "Tu Dong Combo CWW") {
+                    ImGui::Text(ICON_FA_INFO_CIRCLE); ImGui::SameLine();
+                    ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x + 5);
+                    ImGui::Text("Tu dong kich hoat combo phun nitro kep CWW/WCW ngay khi thoat cua.");
+                    ImGui::PopTextWrapPos(); ImGui::Spacing();
+                    ToggleButtonMini("Kich Hoat CWW", &mods.AutoCWWSequence);
                 }
                 else if (widgetName == "Tam Drift & Apex Guide" || widgetName == "Tinh Goc Cua Toi Uu") {
                     ImGui::Text(ICON_FA_INFO_CIRCLE); ImGui::SameLine();

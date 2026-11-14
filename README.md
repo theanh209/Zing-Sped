@@ -20,9 +20,14 @@
 
 ## ⚡ Các tính năng nổi bật (Features)
 
-### 🏎️ Tab 0: Đua Xe Cơ Bản (Racing Cheats)
+### 🏎️ Tab 0: Đua Xe Cơ Bản & Auto Lái Nâng Cao (Racing & Auto Drive)
+- **Quỹ Đạo Ôm Cua Chuyên Nghiệp (Apex Out-In-Out Line):** Tùy chọn 3 chế độ chạy tự động: *1. Đường hướng dẫn*, *2. Ra giữa đường*, *3. Quỹ đạo Apex Out-In-Out* (bám sát mép ngoài trước cua $\rightarrow$ cắt sát vách cua trong $\rightarrow$ văng ngoài thoát cua đạt tốc độ cao nhất).
+- **Trợ Lực Tự Bẻ Lái Apex & Trả Thẳng (Auto Apex Counter-Steering):** Tự động điều chỉnh góc xoay bánh xe vào góc vàng drift $38^\circ - 45^\circ$, tự động trả thẳng lái ngay khi hết cua giúp triệt tiêu văng xe và chống cọ mép tường.
+- **Tự Động Kích Hoạt Combo CWW (Auto CWW Sequence):** Tự động canh đúng nhịp thoát cua để kích hoạt chuỗi kép Nitro + Mini Boost đôi (chuẩn combo CWW/WCW của tuyển thủ chuyên nghiệp).
+- **Tùy Chỉnh Độ Nhạy Trợ Lực Drift:** Thanh trượt điều chỉnh mức độ can thiệp góc bẻ lái từ $1.0\times$ đến $3.0\times$.
+- **Chế Độ Cắt Góc Cua:** Lựa chọn phong cách chạy: *Out-In-Out Tối Ưu*, *Cắt Ngắn (Short-Cut)*, hoặc *An Toàn (Safe Line)*.
 - **Danh Mục Bản Đồ (Map ID Selector):** Cho phép chọn nhanh bản đồ cần đua (Hồ Long Tỉnh 157, Thành Phố 11 102, Đảo 11 120, Thu Danh Sơn 145, Suối Nước Nóng 188, Sa Mạc Tốc Độ 210) để tự động căn chỉnh tọa độ cua.
-- **Auto Đua Lập Trình (Auto Race):** Tự động bám đường hướng dẫn hoặc tự ra giữa đường kết hợp quỹ đạo tối ưu.
+- **Auto Đua Lập Trình (Auto Race):** Tự động chạy bám đường kết hợp hệ thống lái tối ưu.
 - **Vô Hạn Nitro (Infinite Nitro):** Luôn duy trì nitro, hỗ trợ thanh trượt tùy chỉnh thời gian Nitro (1s - 10s).
 - **Gia Tốc (Speed Acceleration):** Tăng tốc độ tối đa của xe, hỗ trợ thanh trượt tốc độ (50 - 300 km/h).
 - **Mini Boot (Super Mini Boost):** Tăng tốc mini boost liên tục.

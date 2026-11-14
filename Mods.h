@@ -30,10 +30,14 @@ struct Mods {
     float GiaTocSpeed = 105.0f; // Mặc định 105.0f, range 10.0f - 300.0f
     float NitroDuration = 3.0f;  // Mặc định 3.0f, range 1.0f - 10.0f
     
-    // Tab Auto Đua & Bản đồ (Map Selector)
-    int AutoDuaMode = 1; // 1: Theo đường hướng dẫn, 2: Tự ra giữa đường
+    // Tab Auto Đua & Bản đồ (Advanced Auto Drive & Steering)
+    int AutoDuaMode = 1; // 1: Theo đường hướng dẫn, 2: Tự ra giữa đường, 3: Quỹ đạo Apex Out-In-Out
     bool AutoDuaLapTrinh = false;
     int SelectedMapIndex = 0; // Danh mục Map ID
+    bool AutoApexSteer = true; // Trợ lực tự bẻ lái vào góc Apex & trả thẳng
+    bool AutoCWWSequence = true; // Tự động combo chuỗi CWW khi thoát cua
+    float DriftAssistanceLevel = 1.5f; // Độ nhạy trợ lực drift (1.0f - 3.0f)
+    int RacingLineType = 0; // 0: Out-In-Out (Tối ưu), 1: Cắt ngắn (Short-Cut), 2: An toàn (Safe Line)
     
     // Tab Nhân Vật / Xe
     bool KySinh = false;
@@ -84,6 +88,7 @@ void InitAntiReport();
 void RenderHUD();
 void RenderDriftGuide();
 void RenderSpeedometer();
+void ProcessAutoDrive(uintptr_t kart);
 bool ExportConfigToClipboard();
 bool ImportConfigFromClipboard();
 void LoadDynamicOffsets();

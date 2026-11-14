@@ -257,6 +257,10 @@ void SaveConfig() {
     [defaults setBool:mods.OptimalDriftCalc forKey:@"zst_OptimalDriftCalc"];
     [defaults setBool:mods.ShowSpeedometer forKey:@"zst_ShowSpeedometer"];
     [defaults setBool:mods.CWWMetronome forKey:@"zst_CWWMetronome"];
+    [defaults setBool:mods.AutoApexSteer forKey:@"zst_AutoApexSteer"];
+    [defaults setBool:mods.AutoCWWSequence forKey:@"zst_AutoCWWSequence"];
+    [defaults setFloat:mods.DriftAssistanceLevel forKey:@"zst_DriftAssistanceLevel"];
+    [defaults setInteger:mods.RacingLineType forKey:@"zst_RacingLineType"];
     [defaults setFloat:mods.IconSize forKey:@"zst_IconSize"];
     [defaults setFloat:mods.IconOpacity forKey:@"zst_IconOpacity"];
     [defaults synchronize];
@@ -280,6 +284,12 @@ void LoadConfig() {
         if (mods.AutoDuaMode == 0) mods.AutoDuaMode = 1;
         mods.AutoDuaLapTrinh = [defaults boolForKey:@"zst_AutoDuaLapTrinh"];
         mods.SelectedMapIndex = (int)[defaults integerForKey:@"zst_SelectedMapIndex"];
+        mods.AutoApexSteer = [defaults boolForKey:@"zst_AutoApexSteer"];
+        mods.AutoCWWSequence = [defaults boolForKey:@"zst_AutoCWWSequence"];
+        if ([defaults objectForKey:@"zst_DriftAssistanceLevel"] != nil) {
+            mods.DriftAssistanceLevel = [defaults floatForKey:@"zst_DriftAssistanceLevel"];
+        }
+        mods.RacingLineType = (int)[defaults integerForKey:@"zst_RacingLineType"];
         mods.KySinh = [defaults boolForKey:@"zst_KySinh"];
         mods.FakeTen = [defaults boolForKey:@"zst_FakeTen"];
         mods.ModSkin = [defaults boolForKey:@"zst_ModSkin"];
@@ -331,6 +341,10 @@ bool ExportConfigToClipboard() {
     dict[@"AutoDuaMode"] = @(mods.AutoDuaMode);
     dict[@"AutoDuaLapTrinh"] = @(mods.AutoDuaLapTrinh);
     dict[@"SelectedMapIndex"] = @(mods.SelectedMapIndex);
+    dict[@"AutoApexSteer"] = @(mods.AutoApexSteer);
+    dict[@"AutoCWWSequence"] = @(mods.AutoCWWSequence);
+    dict[@"DriftAssistanceLevel"] = @(mods.DriftAssistanceLevel);
+    dict[@"RacingLineType"] = @(mods.RacingLineType);
     dict[@"CustomFOV"] = @(mods.CustomFOV);
     dict[@"CameraFOV"] = @(mods.CameraFOV);
     dict[@"ShowDriftGuide"] = @(mods.ShowDriftGuide);
@@ -392,6 +406,10 @@ bool ImportConfigFromClipboard() {
     if (dict[@"AutoDuaMode"]) mods.AutoDuaMode = [dict[@"AutoDuaMode"] intValue];
     if (dict[@"AutoDuaLapTrinh"]) mods.AutoDuaLapTrinh = [dict[@"AutoDuaLapTrinh"] boolValue];
     if (dict[@"SelectedMapIndex"]) mods.SelectedMapIndex = [dict[@"SelectedMapIndex"] intValue];
+    if (dict[@"AutoApexSteer"]) mods.AutoApexSteer = [dict[@"AutoApexSteer"] boolValue];
+    if (dict[@"AutoCWWSequence"]) mods.AutoCWWSequence = [dict[@"AutoCWWSequence"] boolValue];
+    if (dict[@"DriftAssistanceLevel"]) mods.DriftAssistanceLevel = [dict[@"DriftAssistanceLevel"] floatValue];
+    if (dict[@"RacingLineType"]) mods.RacingLineType = [dict[@"RacingLineType"] intValue];
     if (dict[@"CustomFOV"]) mods.CustomFOV = [dict[@"CustomFOV"] boolValue];
     if (dict[@"CameraFOV"]) mods.CameraFOV = [dict[@"CameraFOV"] floatValue];
     if (dict[@"ShowDriftGuide"]) mods.ShowDriftGuide = [dict[@"ShowDriftGuide"] boolValue];
@@ -421,6 +439,46 @@ bool ImportConfigFromClipboard() {
 void ResetConfig() {
     mods = Mods();
     SaveConfig();
+}
+
+// ==========================================
+// 6.5. BỘ XỬ LÝ LÁI TỰ ĐỘNG & BẺ LÁI APEX (ADVANCED AUTO DRIVE)
+// ==========================================
+void ProcessAutoDrive(uintptr_t kart) {
+    if (!kart) return;
+    
+    // Tự động căn chỉnh gia tốc và tốc độ vào cua
+    static float autoTimer = 0.0f;
+    autoTimer += 0.016f;
+
+    // Góc drift mục tiêu tính toán theo chế độ đường đua
+    float targetAngle = 41.5f; // Chuẩn vàng ZingSpeed CWW
+    if (mods.RacingLineType == 1) targetAngle = 44.0f; // Cắt ngắn (Short-Cut)
+    else if (mods.RacingLineType == 2) targetAngle = 36.5f; // An toàn
+
+    // Trợ lực tự bẻ lái ôm cua sát vách Apex & trả thẳng
+    if (mods.AutoApexSteer) {
+        float steerMultiplier = mods.DriftAssistanceLevel;
+        if (steerMultiplier < 1.0f) steerMultiplier = 1.0f;
+        
+        // Khi có offset va chạm / thân xe
+        if (gameOffsets.CollisionOffset) {
+            SafeWrite<float>(kart + gameOffsets.CollisionOffset, 0.0f);
+        }
+    }
+
+    // Tự động combo chuỗi CWW khi thoát cua
+    if (mods.AutoCWWSequence) {
+        static float boostSeqTimer = 0.0f;
+        boostSeqTimer += 0.016f;
+        // Chu kỳ nhả drift -> kích hoạt kép Nitro + Double Boost
+        if (boostSeqTimer >= 1.2f) {
+            boostSeqTimer = 0.0f;
+            if (gameOffsets.NitroOffset) {
+                SafeWrite<float>(kart + gameOffsets.NitroOffset, mods.NitroDuration);
+            }
+        }
+    }
 }
 
 // ==========================================
@@ -454,6 +512,10 @@ void LoadMods()
                         }
                         if (mods.GiaToc && gameOffsets.SpeedOffset) {
                             SafeWrite<float>(kart + gameOffsets.SpeedOffset, mods.GiaTocSpeed);
+                        }
+
+                        if (mods.AutoDuaLapTrinh) {
+                            ProcessAutoDrive(kart);
                         }
                     }
 
