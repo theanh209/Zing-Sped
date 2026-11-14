@@ -14,6 +14,9 @@ using namespace std;
 
 void LoadMenu();
 void SetStyles();
+void ApplyTheme(int preset);
+void RenderHUD();
+
 extern ImVec2 MenuOrigin;
 extern ImVec2 MenuSize;
 extern bool MoveMenu;

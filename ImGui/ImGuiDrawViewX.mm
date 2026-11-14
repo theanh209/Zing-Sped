@@ -168,6 +168,11 @@ extern MenuInteraction* menuTouchView;
             ImGui::End();
             //ImGui::ShowDemoWindow();
         }
+
+        if (mods.ShowHUD) {
+            RenderHUD();
+        }
+
         ImGui::EndFrame();
         ImGui::Render();
         ImDrawData *drawData = ImGui::GetDrawData();

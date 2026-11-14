@@ -171,3 +171,19 @@ bool isOpened = false;
 }
 
 @end
+
+void UpdateFloatingIcon(float size, float opacity) {
+    if (VisibleMenuButton && InvisibleMenuButton) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            CGPoint center = VisibleMenuButton.center;
+            VisibleMenuButton.frame = CGRectMake(0, 0, size, size);
+            VisibleMenuButton.center = center;
+            VisibleMenuButton.layer.cornerRadius = size * 0.5f;
+            VisibleMenuButton.layer.opacity = opacity;
+
+            InvisibleMenuButton.frame = CGRectMake(0, 0, size, size);
+            InvisibleMenuButton.center = center;
+        });
+    }
+}
+

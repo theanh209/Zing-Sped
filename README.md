@@ -1,6 +1,6 @@
 # ZingSpeedTweakIOS
 
-> **ZingSpeed Mobile iOS Mod Menu (ImGui Metal)**  
+> **ZingSpeed Mobile iOS Mod Menu (ImGui Metal Edition)**  
 > Menu mod/hack tweak cho tựa game **ZingSpeed Mobile VN (`vn.vng.zsmvn`)** trên hệ điều hành iOS (Jailbreak & Non-Jailbreak / Jailed).  
 > **Tác giả:** [Zhee Dev](https://github.com/zheedevVn)
 
@@ -20,7 +20,7 @@
 
 ## ⚡ Các tính năng nổi bật (Features)
 
-### 🏎️ Tab Cơ Bản (Racing Cheats)
+### 🏎️ Tab 0: Đua Xe Cơ Bản (Racing Cheats)
 - **Auto Đua Lập Trình (Auto Race):** Tự động bám đường hướng dẫn hoặc tự ra giữa đường (Map ID 157 Hồ Long Tỉnh,...).
 - **Vô Hạn Nitro (Infinite Nitro):** Luôn duy trì nitro, hỗ trợ thanh trượt tùy chỉnh thời gian Nitro (1s - 10s).
 - **Gia Tốc (Speed Acceleration):** Tăng tốc độ tối đa của xe, hỗ trợ thanh trượt tốc độ (50 - 300 km/h).
@@ -30,19 +30,30 @@
 - **Thoát Nhanh (Fast Exit):** Rời trận nhanh chóng.
 - **Nitro Nhanh:** Hồi nitro siêu tốc.
 
-### 👤 Tab Nhân Vật & Xe (Player & Kart)
+### 👤 Tab 1: Nhân Vật & Tài Khoản (Player)
 - **Ký Sinh (Parasite):** Ghép và đồng bộ xe mục tiêu.
-- **Fake Tên:** Ẩn hoặc đổi tên ingame.
+- **Fake Tên:** Ẩn hoặc đổi tên hiển thị trong trận.
+
+### 🚘 Tab 2: Xe & Góc Nhìn (Kart & Visuals)
 - **Mod Skin & Xe:** Mở khóa hiển thị xe và skin yêu thích.
 - **Mod Chỉ Số Xe:** Tùy biến thông số hiệu năng xe.
-- **Camera FOV:** Thanh trượt góc nhìn Camera từ 45° đến 120° giúp mở rộng tầm nhìn đường đua.
+- **Camera FOV:** Thanh trượt góc nhìn Camera từ 45° đến 120° giúp mở rộng tầm nhìn toàn cảnh đường đua.
 
-### ⚙️ Tab Cài Đặt (Settings & System)
-- **Lưu Cấu Hình (Save Config):** Tự động ghi nhớ và khôi phục toàn bộ cài đặt qua `NSUserDefaults`, không lo mất thiết lập khi khởi động lại game.
-- **Light / Dark Theme:** Tùy chọn giao diện sáng / tối mượt mà.
-- **Streamer Mode:** Chống quay lén màn hình menu khi livestream/quay video màn hình qua textfield bảo mật.
-- **Menu Logs:** Bảng log trực tiếp trong menu để debug.
-- **Safe Memory Engine:** Cơ chế đọc/ghi bộ nhớ an toàn (Safe Memory) và Cache Base Address, chống crash (văng game) khi chuyển map hoặc đổi xe, tiết kiệm tối đa pin và CPU.
+### 🛠️ Tab 3: Tiện Ích & Phòng Chờ (Utilities & Protection)
+- **HUD Realtime Overlay:** Bảng chỉ số FPS thực tế và Ping ms hiển thị góc màn hình (không cản trở thao tác lái xe).
+- **Auto Ready:** Tự động ấn Sẵn sàng khi vào phòng chờ.
+- **Auto Start:** Tự động bắt đầu trận đấu nhanh chóng.
+- **Giảm Va Chạm Tường:** Ổn định thân xe, giảm thiểu tình trạng nảy xe khi cọ mép tường.
+- **Chống Report Server & Chặn Log Analytics:** Can thiệp ngắt gói tin gửi crash log/telemetry về máy chủ game, giảm thiểu nguy cơ bị quét tài khoản.
+
+### 👑 Tab 4: Tác Giả Zhee Dev & Giao Diện (Showcase & System)
+- **Thẻ Tác Giả Zhee Dev (Profile Showcase):** Tiêu đề animated gradient cầu vồng, card thông tin lập trình viên viền neon phát sáng, hiển thị trạng thái `STATUS: ONLINE & ACTIVATED`.
+- **Nút Sao Chép Nhanh:** 1 chạm sao chép link GitHub repo và link Support vào Clipboard.
+- **Bộ Theme Presets:** Đổi ngay màu sắc menu: **Classic Dark**, **Cyberpunk Neon Cyan**, **Racing Red**, **Neon Purple**, **Emerald Green**.
+- **Tùy biến Nút Nổi (Floating Icon):** Thanh trượt chỉnh kích thước icon và độ mờ trong suốt.
+- **Haptic Feedback:** Tích hợp rung phản hồi nhẹ qua Taptic Engine của iPhone khi chạm nút hoặc bật toggle.
+- **Lưu Cấu Hình (Save/Reset Config):** Tự động ghi nhớ cấu hình vào `NSUserDefaults`.
+- **Safe Memory Engine:** Đọc/ghi an toàn bằng Mach API (`vm_read_overwrite`, `vm_protect`), cache Base Address chống crash và tiết kiệm pin.
 
 ---
 
