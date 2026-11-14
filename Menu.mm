@@ -239,6 +239,10 @@ void LoadMenu() {
             newChildVisible = childVisibilityMap["Mod chi so xe"];
             ToggleWidget(ICON_FA_WRENCH, "Mod chi so xe", &mods.ModChiSoXe, &newChildVisible);
             childVisibilityMap["Mod chi so xe"] = newChildVisible;
+
+            newChildVisible = childVisibilityMap["Camera FOV"];
+            ToggleWidget(ICON_FA_EYE, "Camera FOV", &mods.CustomFOV, &newChildVisible);
+            childVisibilityMap["Camera FOV"] = newChildVisible;
         }
         ImGui::EndChild();
     }
@@ -266,6 +270,19 @@ void LoadMenu() {
             if (ToggleWidget(ICON_FA_TERMINAL, "Menu Logs", &showLogs, &newChildVisible)) {}
             childVisibilityMap["Menu Logs"] = newChildVisible;
             if (showLogs) Console::render();
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            if (ImGui::Button(ICON_FA_SAVE "  Luu Cau Hinh", ImVec2(ImGui::GetContentRegionAvail().x, 28))) {
+                SaveConfig();
+                Console::logSuccess("Da luu cau hinh thanh cong!");
+            }
+            if (ImGui::Button(ICON_FA_UNDO "  Khoi Phuc Mac Dinh", ImVec2(ImGui::GetContentRegionAvail().x, 28))) {
+                ResetConfig();
+                Console::logWarning("Da khoi phuc ve mac dinh!");
+            }
 
             ImGui::Spacing();
             ImGui::Separator();
@@ -311,8 +328,23 @@ void LoadMenu() {
                 else if (widgetName == "Vo Han Nitro" || widgetName == "Nitro Nhanh") {
                     ImGui::Text(ICON_FA_INFO_CIRCLE); ImGui::SameLine();
                     ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x + 5);
-                    ImGui::Text("Chinh sua luong Nitro.");
+                    ImGui::Text("Chinh sua luong va thoi gian Nitro.");
                     ImGui::PopTextWrapPos(); ImGui::Spacing();
+                    SliderFloatMini("Thoi Gian Nitro", &mods.NitroDuration, 1.0f, 10.0f);
+                }
+                else if (widgetName == "Gia Toc" || widgetName == "Mod chi so xe") {
+                    ImGui::Text(ICON_FA_INFO_CIRCLE); ImGui::SameLine();
+                    ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x + 5);
+                    ImGui::Text("Tuy chinh toc do xe khi kich hoat.");
+                    ImGui::PopTextWrapPos(); ImGui::Spacing();
+                    SliderFloatMini("Toc Do Xe", &mods.GiaTocSpeed, 50.0f, 300.0f);
+                }
+                else if (widgetName == "Camera FOV") {
+                    ImGui::Text(ICON_FA_INFO_CIRCLE); ImGui::SameLine();
+                    ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x + 5);
+                    ImGui::Text("Tuy chinh goc nhin Camera (FOV).");
+                    ImGui::PopTextWrapPos(); ImGui::Spacing();
+                    SliderFloatMini("Goc Nhin (FOV)", &mods.CameraFOV, 45.0f, 120.0f);
                 }
                 ImGui::SetWindowFontScale(1.0f); ImGui::PopStyleColor();
             }

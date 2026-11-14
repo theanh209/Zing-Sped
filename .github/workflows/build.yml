@@ -2,7 +2,16 @@ name: Build ZingSpeedTweakIOS
 on:
   push:
     branches: [ "main" ]
+    tags: [ "v*" ]
   workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Tạo GitHub Release (true/false)'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -26,8 +35,36 @@ jobs:
           export PATH=$THEOS/bin:$PATH
           make clean package FINALPACKAGE=1
 
-      - name: Upload .deb Package
+      - name: Extract .dylib & Prepare Output
+        run: |
+          mkdir -p output/dylib
+          cp packages/*.deb output/
+          mkdir -p extracted
+          dpkg-deb -x packages/*.deb extracted
+          find extracted -name "*.dylib" -exec cp {} output/dylib/ \;
+          find extracted -name "*.plist" -exec cp {} output/dylib/ \;
+          cp Includes/Libs/libdobby_fixed.a output/dylib/ || true
+          ls -la output/
+          ls -la output/dylib/
+
+      - name: Upload .deb (Jailbreak)
         uses: actions/upload-artifact@v4
         with:
           name: ZingSpeedTweakIOS-Deb
-          path: packages/*.deb
+          path: output/*.deb
+
+      - name: Upload .dylib (Non-Jailbreak / Sideloadly)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZingSpeedTweakIOS-Dylib
+          path: output/dylib/*
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.create_release == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            output/*.deb
+            output/dylib/*
+          name: ZingSpeedTweakIOS Release ${{ github.ref_name }}
+          generate_release_notes: true
