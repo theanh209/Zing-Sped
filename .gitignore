@@ -1,0 +1,25 @@
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Theos Build Artifacts
+.theos/
+packages/
+obj/
+*.deb
+*.ipa
+
+# Xcode & Editors
+*.mode1v3
+*.mode2v3
+*.nib
+*.swp
+*.orig
+*~
+.vscode/
+.idea/

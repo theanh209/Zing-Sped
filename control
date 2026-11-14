@@ -1,0 +1,10 @@
+Package: com.zheedev.zingspeedtweakios
+Name: ZingSpeedTweakIOS
+Depends: mobilesubstrate
+Version: 1.0.0
+Architecture: iphoneos-arm
+Description: ZingSpeed Mobile iOS Tweak Mod Menu by Zhee Dev
+Maintainer: Zhee Dev <115208144+zheedevVn@users.noreply.github.com>
+Author: Zhee Dev
+Section: Tweaks
+Homepage: https://github.com/zheedevVn/ZingSpeedTweakIOS
