@@ -1,5 +1,6 @@
 #include "ImGuiDrawViewX.h"
 #include "MenuUtils.h"
+#include "../Mods.h"
 #define SCREEN_WIDTH [UIScreen mainScreen].bounds.size.width
 #define timer(sec) dispatch_after(dispatch_time(DISPATCH_TIME_NOW, sec * NSEC_PER_SEC), dispatch_get_main_queue(), ^
 
@@ -118,6 +119,19 @@ bool isOpened = false;
     [VisibleMenuButton setBackgroundImage:menuIconImage forState:UIControlStateNormal];
     VisibleMenuButton.layer.opacity = 0.7;
     [hideRecordView addSubview:VisibleMenuButton];
+
+    // Cử chỉ chạm 3 ngón tay để bật/tắt Menu nhanh chóng
+    UITapGestureRecognizer *threeFingerTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleThreeFingerTap:)];
+    threeFingerTap.numberOfTouchesRequired = 3;
+    [[UIApplication sharedApplication].keyWindow addGestureRecognizer:threeFingerTap];
+}
+
+-(void)handleThreeFingerTap:(UITapGestureRecognizer *)gesture {
+    if (gesture.state == UIGestureRecognizerStateEnded && mods.GestureShortcut) {
+        TriggerHaptic(0);
+        PlayBeepSound(1104);
+        [ImGuiDrawViewX showChange:![ImGuiDrawViewX isMenuShowing]];
+    }
 }
 
 -(void)showMenu:(UITapGestureRecognizer *)tapGestureRecognizer {

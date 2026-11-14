@@ -2,12 +2,14 @@
 #include "Mods.h"
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
+#import <AudioToolbox/AudioToolbox.h>
 #include <mach-o/dyld.h>
 #include <mach/mach.h>
 #import <objc/runtime.h>
 #include <string.h>
 
 Mods mods;
+GameOffsets gameOffsets;
 char* BinaryName = "Frameworks/UnityFramework.framework/UnityFramework";
 
 // ==========================================
@@ -68,7 +70,7 @@ void WriteMem(uintptr_t addr, T val) {
 }
 
 // ==========================================
-// 3. HAPTIC FEEDBACK (RUNG PHẢN HỒI IPHONE)
+// 3. HAPTIC & SOUND FEEDBACK (RUNG & ÂM THANH)
 // ==========================================
 void TriggerHaptic(int type) {
     if (!mods.HapticFeedback) return;
@@ -93,8 +95,72 @@ void TriggerHaptic(int type) {
     });
 }
 
+void PlayBeepSound(int soundId) {
+    if (!mods.SoundEffects) return;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        AudioServicesPlaySystemSound((SystemSoundID)soundId);
+    });
+}
+
 // ==========================================
-// 4. CHỐNG REPORT & CHẶN GỬI LOG / ANALYTICS
+// 4. BỘ NẠP OFFSET ĐỘNG TỪ FILE JSON (DOCUMENTS)
+// ==========================================
+static uintptr_t ParseHex(NSString *hexStr) {
+    if (!hexStr) return 0;
+    NSScanner *scanner = [NSScanner scannerWithString:hexStr];
+    unsigned long long val = 0;
+    if ([scanner scanHexLongLong:&val]) {
+        return (uintptr_t)val;
+    }
+    return 0;
+}
+
+static NSString* GetOffsetsFilePath() {
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *docsDir = [paths firstObject];
+    return [docsDir stringByAppendingPathComponent:@"Offsets.json"];
+}
+
+void SaveDefaultOffsetsFile() {
+    NSString *path = GetOffsetsFilePath();
+    if (![[NSFileManager defaultManager] fileExistsAtPath:path]) {
+        NSDictionary *dict = @{
+            @"_HuongDan": @"Dien cac dia chi offset hex 0x vao day. Luu file roi vao game bam Reload Offsets.",
+            @"GWorld": @"0x0",
+            @"PlayerKart": @"0x0",
+            @"NitroOffset": @"0x0",
+            @"SpeedOffset": @"0x0",
+            @"PositionOffset": @"0x0",
+            @"CollisionOffset": @"0x0"
+        };
+        NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict options:NSJSONWritingPrettyPrinted error:nil];
+        if (jsonData) {
+            [jsonData writeToFile:path atomically:YES];
+        }
+    }
+}
+
+void LoadDynamicOffsets() {
+    SaveDefaultOffsetsFile();
+    NSString *path = GetOffsetsFilePath();
+    NSData *data = [NSData dataWithContentsOfFile:path];
+    if (data) {
+        NSError *err = nil;
+        NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&err];
+        if (!err && json && [json isKindOfClass:[NSDictionary class]]) {
+            if (json[@"GWorld"]) gameOffsets.GWorld = ParseHex(json[@"GWorld"]);
+            if (json[@"PlayerKart"]) gameOffsets.PlayerKart = ParseHex(json[@"PlayerKart"]);
+            if (json[@"NitroOffset"]) gameOffsets.NitroOffset = ParseHex(json[@"NitroOffset"]);
+            if (json[@"SpeedOffset"]) gameOffsets.SpeedOffset = ParseHex(json[@"SpeedOffset"]);
+            if (json[@"PositionOffset"]) gameOffsets.PositionOffset = ParseHex(json[@"PositionOffset"]);
+            if (json[@"CollisionOffset"]) gameOffsets.CollisionOffset = ParseHex(json[@"CollisionOffset"]);
+            gameOffsets.isLoadedFromFile = true;
+        }
+    }
+}
+
+// ==========================================
+// 5. CHỐNG REPORT & CHẶN GỬI LOG / ANALYTICS
 // ==========================================
 static BOOL ShouldBlockURL(NSURL *url) {
     if (!url) return NO;
@@ -147,7 +213,7 @@ void InitAntiReport() {
 }
 
 // ==========================================
-// 5. TỰ ĐỘNG LƯU / KHÔI PHỤC CẤU HÌNH CONFIG
+// 6. TỰ ĐỘNG LƯU / KHÔI PHỤC CẤU HÌNH CONFIG
 // ==========================================
 void SaveConfig() {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
@@ -174,12 +240,15 @@ void SaveConfig() {
     
     // Config mới
     [defaults setBool:mods.ShowHUD forKey:@"zst_ShowHUD"];
+    [defaults setBool:mods.ShowMatchTimer forKey:@"zst_ShowMatchTimer"];
     [defaults setBool:mods.AutoReady forKey:@"zst_AutoReady"];
     [defaults setBool:mods.AutoStart forKey:@"zst_AutoStart"];
     [defaults setBool:mods.AntiCollision forKey:@"zst_AntiCollision"];
     [defaults setBool:mods.AntiReport forKey:@"zst_AntiReport"];
     [defaults setBool:mods.BlockAnalytics forKey:@"zst_BlockAnalytics"];
     [defaults setBool:mods.HapticFeedback forKey:@"zst_HapticFeedback"];
+    [defaults setBool:mods.SoundEffects forKey:@"zst_SoundEffects"];
+    [defaults setBool:mods.GestureShortcut forKey:@"zst_GestureShortcut"];
     [defaults setInteger:mods.ThemePreset forKey:@"zst_ThemePreset"];
     [defaults setFloat:mods.IconSize forKey:@"zst_IconSize"];
     [defaults setFloat:mods.IconOpacity forKey:@"zst_IconOpacity"];
@@ -214,12 +283,15 @@ void LoadConfig() {
         // Config mới
         if ([defaults objectForKey:@"zst_ShowHUD"] != nil) {
             mods.ShowHUD = [defaults boolForKey:@"zst_ShowHUD"];
+            mods.ShowMatchTimer = [defaults boolForKey:@"zst_ShowMatchTimer"];
             mods.AutoReady = [defaults boolForKey:@"zst_AutoReady"];
             mods.AutoStart = [defaults boolForKey:@"zst_AutoStart"];
             mods.AntiCollision = [defaults boolForKey:@"zst_AntiCollision"];
             mods.AntiReport = [defaults boolForKey:@"zst_AntiReport"];
             mods.BlockAnalytics = [defaults boolForKey:@"zst_BlockAnalytics"];
             mods.HapticFeedback = [defaults boolForKey:@"zst_HapticFeedback"];
+            mods.SoundEffects = [defaults boolForKey:@"zst_SoundEffects"];
+            mods.GestureShortcut = [defaults boolForKey:@"zst_GestureShortcut"];
             mods.ThemePreset = (int)[defaults integerForKey:@"zst_ThemePreset"];
             mods.IconSize = [defaults floatForKey:@"zst_IconSize"];
             mods.IconOpacity = [defaults floatForKey:@"zst_IconOpacity"];
@@ -235,12 +307,15 @@ void ResetConfig() {
 }
 
 // ==========================================
-// 6. LUỒNG THI HÀNH CHEATS (BACKGROUND THREAD)
+// 7. LUỒNG THI HÀNH CHEATS (BACKGROUND THREAD)
 // ==========================================
 void LoadMods()
 {
     // Tải cấu hình đã lưu
     LoadConfig();
+
+    // Tự động nạp file Offsets.json trong Documents
+    LoadDynamicOffsets();
 
     // Khởi tạo bộ chặn log / anti-report
     InitAntiReport();
@@ -252,12 +327,19 @@ void LoadMods()
                 uintptr_t base = GetUnityBase();
                 if (base) {
                     // === KHU VỰC CAN THIỆP BỘ NHỚ ===
-                    if (mods.VoHanNitro) {
-                        // SafeWrite<float>(Kart + 0x0, mods.NitroDuration);
+                    // Có thể sử dụng trực tiếp gameOffsets.GWorld, gameOffsets.NitroOffset, v.v.
+                    uintptr_t gworld = gameOffsets.GWorld ? ReadMem<uintptr_t>(base + gameOffsets.GWorld) : 0;
+                    uintptr_t kart = (gworld && gameOffsets.PlayerKart) ? ReadMem<uintptr_t>(gworld + gameOffsets.PlayerKart) : 0;
+
+                    if (kart) {
+                        if (mods.VoHanNitro && gameOffsets.NitroOffset) {
+                            SafeWrite<float>(kart + gameOffsets.NitroOffset, mods.NitroDuration);
+                        }
+                        if (mods.GiaToc && gameOffsets.SpeedOffset) {
+                            SafeWrite<float>(kart + gameOffsets.SpeedOffset, mods.GiaTocSpeed);
+                        }
                     }
-                    if (mods.GiaToc) {
-                        // SafeWrite<float>(Kart + 0x0, mods.GiaTocSpeed);
-                    }
+
                     if (mods.AutoDuaLapTrinh) {
                         // Code Auto Bám Đường
                     }

@@ -2,6 +2,17 @@
 #ifndef Mods_h
 #define Mods_h
 #include <string>
+#include <cstdint>
+
+struct GameOffsets {
+    uintptr_t GWorld = 0x0;
+    uintptr_t PlayerKart = 0x0;
+    uintptr_t NitroOffset = 0x0;
+    uintptr_t SpeedOffset = 0x0;
+    uintptr_t PositionOffset = 0x0;
+    uintptr_t CollisionOffset = 0x0;
+    bool isLoadedFromFile = false;
+};
 
 struct Mods {
     // Tab Cơ Bản (Racing)
@@ -36,6 +47,7 @@ struct Mods {
 
     // Tab Tiện Ích & Phòng Chờ (Tab 3)
     bool ShowHUD = true;          // Hiển thị HUD FPS / Ping
+    bool ShowMatchTimer = true;   // Hiển thị đồng hồ bấm giờ trận
     bool AutoReady = false;        // Tự động bấm Sẵn sàng phòng chờ
     bool AutoStart = false;        // Tự động bấm bắt đầu
     bool AntiCollision = false;    // Giảm va chạm nảy xe cọ tường
@@ -44,19 +56,27 @@ struct Mods {
 
     // Tùy biến Menu & Hệ thống (Tab 4)
     bool HapticFeedback = true;    // Rung phản hồi iPhone
+    bool SoundEffects = true;     // Âm thanh phản hồi khi bật tắt
+    bool GestureShortcut = true;  // Cử chỉ chạm 3 ngón tay mở menu
     int ThemePreset = 0;          // 0: Dark, 1: Neon Cyan, 2: Racing Red, 3: Neon Purple, 4: Emerald Green
     float IconSize = 50.0f;       // Kích thước nút mở menu (35 - 75)
     float IconOpacity = 0.7f;     // Độ mờ nút menu (0.2 - 1.0)
 };
 
 extern Mods mods;
+extern GameOffsets gameOffsets;
 
+uintptr_t GetUnityBase();
 void SaveConfig();
 void LoadConfig();
 void ResetConfig();
 void TriggerHaptic(int type = 0);
+void PlayBeepSound(int soundId = 1104);
 void ApplyTheme(int preset);
 void InitAntiReport();
 void RenderHUD();
+void LoadDynamicOffsets();
+void SaveDefaultOffsetsFile();
+void ResetMatchTimer();
 
 #endif

@@ -40,20 +40,46 @@
 - **Camera FOV:** Thanh trượt góc nhìn Camera từ 45° đến 120° giúp mở rộng tầm nhìn toàn cảnh đường đua.
 
 ### 🛠️ Tab 3: Tiện Ích & Phòng Chờ (Utilities & Protection)
-- **HUD Realtime Overlay:** Bảng chỉ số FPS thực tế và Ping ms hiển thị góc màn hình (không cản trở thao tác lái xe).
-- **Auto Ready:** Tự động ấn Sẵn sàng khi vào phòng chờ.
-- **Auto Start:** Tự động bắt đầu trận đấu nhanh chóng.
+- **HUD Realtime Overlay:** Bảng chỉ số FPS thực tế, Ping ms, đồng hồ bấm giờ (Stopwatch) và Badges cheat đang hoạt động (không cản trở thao tác lái xe).
+- **Live Memory Inspector:** Xem trực tiếp địa chỉ `Unity Base (0x...)` và trạng thái module game ngay trên menu.
+- **Bộ Nạp Offset Động (`Offsets.json`):** Tự động đọc file `Offsets.json` từ thư mục Documents của game, cho phép bạn cập nhật offset 0x bất cứ lúc nào qua Filza/Text Editor mà **không cần phải biên dịch lại mã nguồn**.
+- **Auto Ready & Auto Start:** Tự động ấn Sẵn sàng và Bắt đầu trận đấu.
 - **Giảm Va Chạm Tường:** Ổn định thân xe, giảm thiểu tình trạng nảy xe khi cọ mép tường.
 - **Chống Report Server & Chặn Log Analytics:** Can thiệp ngắt gói tin gửi crash log/telemetry về máy chủ game, giảm thiểu nguy cơ bị quét tài khoản.
 
 ### 👑 Tab 4: Tác Giả Zhee Dev & Giao Diện (Showcase & System)
 - **Thẻ Tác Giả Zhee Dev (Profile Showcase):** Tiêu đề animated gradient cầu vồng, card thông tin lập trình viên viền neon phát sáng, hiển thị trạng thái `STATUS: ONLINE & ACTIVATED`.
-- **Nút Sao Chép Nhanh:** 1 chạm sao chép link GitHub repo và link Support vào Clipboard.
+- **Cử chỉ 3 ngón tay (3-Finger Tap):** Chạm 3 ngón tay cùng lúc lên màn hình để ẩn/hiện menu nhanh chóng.
+- **Âm thanh phản hồi (Sound Effects):** Phát âm thanh click native khi thao tác.
 - **Bộ Theme Presets:** Đổi ngay màu sắc menu: **Classic Dark**, **Cyberpunk Neon Cyan**, **Racing Red**, **Neon Purple**, **Emerald Green**.
 - **Tùy biến Nút Nổi (Floating Icon):** Thanh trượt chỉnh kích thước icon và độ mờ trong suốt.
 - **Haptic Feedback:** Tích hợp rung phản hồi nhẹ qua Taptic Engine của iPhone khi chạm nút hoặc bật toggle.
 - **Lưu Cấu Hình (Save/Reset Config):** Tự động ghi nhớ cấu hình vào `NSUserDefaults`.
 - **Safe Memory Engine:** Đọc/ghi an toàn bằng Mach API (`vm_read_overwrite`, `vm_protect`), cache Base Address chống crash và tiết kiệm pin.
+
+---
+
+## 📄 Hướng dẫn sử dụng file cấu hình `Offsets.json`
+
+Khi cài đặt và mở game lần đầu, tweak sẽ tự tạo file mẫu tại:  
+`/var/mobile/Containers/Data/Application/<ZingSpeedMobile>/Documents/Offsets.json`
+
+Nội dung file JSON:
+```json
+{
+  "_HuongDan": "Dien cac dia chi offset hex 0x vao day. Luu file roi vao game bam Reload Offsets.",
+  "GWorld": "0x0",
+  "PlayerKart": "0x0",
+  "NitroOffset": "0x0",
+  "SpeedOffset": "0x0",
+  "PositionOffset": "0x0",
+  "CollisionOffset": "0x0"
+}
+```
+Khi bạn có offset mới:
+1. Mở file `Offsets.json` bằng Filza hoặc trình soạn thảo text bất kỳ.
+2. Điền địa chỉ hex (ví dụ: `"NitroOffset": "0x54"`).
+3. Vào game, mở Menu -> **Tab Tiện Ích** -> Bấm **Tải Lại Offsets.json**. Tweak sẽ cập nhật ngay lập tức!
 
 ---
 

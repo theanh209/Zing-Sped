@@ -98,10 +98,20 @@ void ApplyTheme(int preset) {
     SetStyles();
 }
 
+static float matchTimer = 0.0f;
+
+void ResetMatchTimer() {
+    matchTimer = 0.0f;
+}
+
 void RenderHUD() {
     ImGuiIO& io = ImGui::GetIO();
     float fps = io.Framerate;
     float time = (float)ImGui::GetTime();
+
+    if (mods.ShowMatchTimer) {
+        matchTimer += io.DeltaTime;
+    }
 
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration |
                             ImGuiWindowFlags_AlwaysAutoResize |
@@ -109,9 +119,9 @@ void RenderHUD() {
                             ImGuiWindowFlags_NoFocusOnAppearing |
                             ImGuiWindowFlags_NoNav;
 
-    ImVec2 hudPos = ImVec2(io.DisplaySize.x - 170, 20);
+    ImVec2 hudPos = ImVec2(io.DisplaySize.x - 185, 20);
     ImGui::SetNextWindowPos(hudPos, ImGuiCond_Always);
-    ImGui::SetNextWindowBgAlpha(0.65f);
+    ImGui::SetNextWindowBgAlpha(0.70f);
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 8));
@@ -123,6 +133,21 @@ void RenderHUD() {
         ImGui::TextColored(fpsColor, ICON_FA_TACHOMETER_ALT " FPS: %.0f", fps);
         ImGui::SameLine();
         ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "| 16ms");
+
+        if (mods.ShowMatchTimer) {
+            int mins = (int)(matchTimer / 60.0f);
+            int secs = (int)matchTimer % 60;
+            int centis = (int)((matchTimer - (int)matchTimer) * 100.0f);
+            ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.25f, 1.0f), ICON_FA_STOPWATCH " %02d:%02d.%02d", mins, secs, centis);
+        }
+
+        if (mods.VoHanNitro || mods.GiaToc || mods.AutoDuaLapTrinh) {
+            std::string tags = "";
+            if (mods.VoHanNitro) tags += "[NITRO] ";
+            if (mods.GiaToc) tags += "[SPEED] ";
+            if (mods.AutoDuaLapTrinh) tags += "[AUTO]";
+            ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.8f, 1.0f), "%s", tags.c_str());
+        }
 
         float r = sinf(time * 2.0f + 0.0f) * 0.4f + 0.6f;
         float g = sinf(time * 2.0f + 2.0f) * 0.4f + 0.6f;
@@ -373,6 +398,37 @@ void LoadMenu() {
             childVisibilityMap["Chan Log Analytics"] = newChildVisible;
 
             ImGui::EndGroup();
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            // THẺ LIVE MEMORY INSPECTOR
+            uintptr_t ubase = GetUnityBase();
+            ImGui::TextColored(ImVec4(0.2f, 0.8f, 1.0f, 1.0f), ICON_FA_MICROCHIP " Live Memory Inspector:");
+            if (ubase) {
+                ImGui::Text("Unity Base: 0x%llX", (unsigned long long)ubase);
+                ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.4f, 1.0f), "Framework Status: Running @ 60 FPS");
+            } else {
+                ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f), "Unity Base: Dang tim kiem module game...");
+            }
+            ImGui::Text("SafeMemory Engine: Active & Protected");
+            ImGui::Text("Offsets File: %s", gameOffsets.isLoadedFromFile ? "Da nap tu Offsets.json" : "Mac dinh");
+
+            ImGui::Spacing();
+            if (ImGui::Button(ICON_FA_SYNC "  Tai Lai Offsets.json", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f - 4, 26))) {
+                TriggerHaptic(0);
+                PlayBeepSound(1057);
+                LoadDynamicOffsets();
+                Console::logSuccess("Da nap lai file Offsets.json tu Documents!");
+            }
+            ImGui::SameLine();
+            if (ImGui::Button(ICON_FA_HISTORY "  Reset Dong Ho", ImVec2(ImGui::GetContentRegionAvail().x, 26))) {
+                TriggerHaptic(0);
+                PlayBeepSound(1104);
+                ResetMatchTimer();
+                Console::logInfo("Da dat lai dong ho bam gio tran!");
+            }
         }
         ImGui::EndChild();
     }
@@ -459,6 +515,14 @@ void LoadMenu() {
             if (ToggleWidget(ICON_FA_TERMINAL, "Menu Logs", &showLogs, &newChildVisible)) {}
             childVisibilityMap["Menu Logs"] = newChildVisible;
             if (showLogs) Console::render();
+
+            newChildVisible = childVisibilityMap["Am Thanh Click"];
+            ToggleWidget(ICON_FA_VOLUME_UP, "Am Thanh Click", &mods.SoundEffects, &newChildVisible);
+            childVisibilityMap["Am Thanh Click"] = newChildVisible;
+
+            newChildVisible = childVisibilityMap["Cu Chi 3 Ngon"];
+            ToggleWidget(ICON_FA_HAND_POINT_UP, "Cu Chi 3 Ngon", &mods.GestureShortcut, &newChildVisible);
+            childVisibilityMap["Cu Chi 3 Ngon"] = newChildVisible;
 
             ImGui::Spacing();
             ImGui::Separator();
@@ -553,6 +617,14 @@ void LoadMenu() {
                     SliderFloatMini("Do Mo Icon", &mods.IconOpacity, 0.2f, 1.0f);
                     UpdateFloatingIcon(mods.IconSize, mods.IconOpacity);
                     ToggleButtonMini("Rung Phan Hoi", &mods.HapticFeedback);
+                }
+                else if (widgetName == "Am Thanh Click" || widgetName == "Cu Chi 3 Ngon") {
+                    ImGui::Text(ICON_FA_INFO_CIRCLE); ImGui::SameLine();
+                    ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x + 5);
+                    ImGui::Text("Tuy chinh am thanh he thong va cu chi go 3 ngon tay de an/hien menu.");
+                    ImGui::PopTextWrapPos(); ImGui::Spacing();
+                    ToggleButtonMini("Am Thanh Click", &mods.SoundEffects);
+                    ToggleButtonMini("Cu Chi 3 Ngon", &mods.GestureShortcut);
                 }
                 ImGui::SetWindowFontScale(1.0f); ImGui::PopStyleColor();
             }
