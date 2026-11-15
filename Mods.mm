@@ -634,8 +634,8 @@ void ProcessAutoDrive(uintptr_t kart) {
     float currentSpeed = mods.GiaToc ? mods.GiaTocSpeed : 225.0f;
 
     // 1. CẬP NHẬT TỌA ĐỘ VÀ HƯỚNG XE THỰC TẾ (REAL POSITION ENGINE)
-    if (gameOffsets.PositionOffset) {
-        Vector3D memPos = SafeRead<Vector3D>(kart + gameOffsets.PositionOffset);
+    Vector3D memPos = { 0.0f, 0.0f, 0.0f };
+    if (gameOffsets.PositionOffset && SafeRead<Vector3D>(kart + gameOffsets.PositionOffset, &memPos)) {
         if (fabsf(memPos.x) > 0.01f || fabsf(memPos.z) > 0.01f) {
             float dx = memPos.x - g_playerPos.x;
             float dz = memPos.z - g_playerPos.z;
