@@ -3,6 +3,11 @@
 #define Mods_h
 #include <string>
 #include <cstdint>
+#if defined(__OBJC__)
+#import <Foundation/Foundation.h>
+#else
+typedef struct objc_object NSString;
+#endif
 
 struct GameOffsets {
     uintptr_t GWorld = 0x0;
