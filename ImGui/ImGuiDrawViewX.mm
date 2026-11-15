@@ -209,10 +209,10 @@ extern MenuInteraction* menuTouchView;
 }
 
 - (void)updateUserInteractionEnabled {
-    BOOL isEnabled = menuVisible;
-    [self.view setUserInteractionEnabled:isEnabled];
-    [self.view.superview setUserInteractionEnabled:isEnabled];
-    [menuTouchView setUserInteractionEnabled:isEnabled];
+    // Do not disable the overlay's superview: the floating menu button lives
+    // alongside the Metal view and would become untappable when the menu hides.
+    self.view.userInteractionEnabled = NO;
+    menuTouchView.userInteractionEnabled = menuVisible;
 }
 
 - (void)mtkView:(MTKView *)view drawableSizeWillChange:(CGSize)size {
