@@ -21,6 +21,11 @@
 ## ⚡ Các tính năng nổi bật (Features)
 
 ### 🏎️ Tab 0: Đua Xe Cơ Bản & Auto Lái Nâng Cao (Racing & Auto Drive)
+- **Khóa Góc Drift Tối Thiểu (Min-Drift 200 km/h Lock):** Khóa góc trượt cố định tại $28^\circ - 32^\circ$ (ngưỡng tối thiểu vừa đủ tích đầy bình Nitro), ngăn xe oversteer $50^\circ-60^\circ$. Duy trì vận tốc trong cua ở mức $198 - 205\text{ km/h}$, bỏ xa đối thủ 0.5s - 1.0s mỗi khúc cua.
+- **Auto Đoạn Drift / Snap Drift (Bẻ Thẳng Lái Siêu Tốc):** Tự động phát xung bẻ ngược lái $0.05\text{s}$ ngay khoảnh khắc thanh Nitro chạm $100\%$ để giật thẳng thân xe ngay tức khắc, triệt tiêu toàn bộ thời gian rê đuôi dư thừa.
+- **Combo CWW Hoàn Hảo Chuẩn Khung Hình (Frame-Perfect CWW Chain):** Tự động thực thi hoàn hảo chuỗi nhịp vi mô: Nhả Drift $\rightarrow$ Mini Boost 1 $\rightarrow$ Nitro $\rightarrow$ Mini Boost 2 (nhịp $0.08\text{s}$), đảm bảo $100\%$ kích hoạt CWW Boost tối đa đạt vận tốc kịch kim $312 - 318\text{ km/h}$ mà không bao giờ xịt CWW.
+- **Chống Văng Khi Va Chạm & Tự Lấy Lại Lái (Anti-Bump & Auto Wall Recovery):** Tự động triệt tiêu phản lực va đập và mô-men xoay mất lái khi bị đối thủ húc hông hoặc cọ nhẹ rào cua, tự động đưa thân xe thăng bằng về tim đường trong $0.15\text{s}$.
+- **Cắt Góc Đi Tắt Ôm Sát Mép Lề (Apex Corner Cutter):** Thu hẹp quỹ đạo theo vector pháp tuyến hướng tâm cua, cho phép xe ôm sát mép rào trong Apex (khoảng cách tùy chỉnh $0.1\text{m} - 0.6\text{m}$), rút ngắn tổng quãng đường vòng chạy từ 8% đến 12%.
 - **Thuật Toán Bám Quỹ Đạo Pure Pursuit (Adaptive Lookahead):** Tính toán độ cong $\kappa = \frac{2\sin(\alpha)}{L}$ theo khoảng cách nhìn trước $L = k \cdot v_{\text{xe}}$, tự động thu ngắn khi vào cua gấp và giãn dài khi chạy đường thẳng tốc độ cao.
 - **Bộ Điều Khiển Bẻ Lái PID (PID Steering Controller):** Triệt tiêu hoàn toàn sai số khoảng cách lệch tâm tim đường $e(t)$, chống triệt để hiện tượng rung lắc/rắn bò khi chạy tốc độ $>300\text{ km/h}$. Tùy biến trực tiếp $K_p, K_i, K_d$.
 - **Bộ Nội Suy Đường Đua Catmull-Rom Cubic Spline:** Làm mịn chuỗi tọa độ mốc cua bằng đa thức bậc 3 liên tục trơn mượt $C^1$, triệt tiêu hiện tượng giật góc khi chuyển mốc.

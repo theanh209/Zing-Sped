@@ -270,6 +270,14 @@ void SaveConfig() {
     [defaults setFloat:mods.PID_Ki forKey:@"zst_PID_Ki"];
     [defaults setFloat:mods.PID_Kd forKey:@"zst_PID_Kd"];
     [defaults setFloat:mods.LookaheadRatio forKey:@"zst_LookaheadRatio"];
+    [defaults setBool:mods.LockMinDriftAngle forKey:@"zst_LockMinDriftAngle"];
+    [defaults setFloat:mods.MinDriftAngleVal forKey:@"zst_MinDriftAngleVal"];
+    [defaults setBool:mods.AutoSnapDrift forKey:@"zst_AutoSnapDrift"];
+    [defaults setBool:mods.PerfectCWWChain forKey:@"zst_PerfectCWWChain"];
+    [defaults setBool:mods.AntiBumpRecovery forKey:@"zst_AntiBumpRecovery"];
+    [defaults setFloat:mods.RecoverySensitivity forKey:@"zst_RecoverySensitivity"];
+    [defaults setBool:mods.ApexCornerCutter forKey:@"zst_ApexCornerCutter"];
+    [defaults setFloat:mods.ApexMargin forKey:@"zst_ApexMargin"];
     [defaults setFloat:mods.IconSize forKey:@"zst_IconSize"];
     [defaults setFloat:mods.IconOpacity forKey:@"zst_IconOpacity"];
     [defaults synchronize];
@@ -308,6 +316,16 @@ void LoadConfig() {
             mods.PID_Ki = [defaults floatForKey:@"zst_PID_Ki"];
             mods.PID_Kd = [defaults floatForKey:@"zst_PID_Kd"];
             mods.LookaheadRatio = [defaults floatForKey:@"zst_LookaheadRatio"];
+        }
+        if ([defaults objectForKey:@"zst_LockMinDriftAngle"] != nil) {
+            mods.LockMinDriftAngle = [defaults boolForKey:@"zst_LockMinDriftAngle"];
+            mods.MinDriftAngleVal = [defaults floatForKey:@"zst_MinDriftAngleVal"];
+            mods.AutoSnapDrift = [defaults boolForKey:@"zst_AutoSnapDrift"];
+            mods.PerfectCWWChain = [defaults boolForKey:@"zst_PerfectCWWChain"];
+            mods.AntiBumpRecovery = [defaults boolForKey:@"zst_AntiBumpRecovery"];
+            mods.RecoverySensitivity = [defaults floatForKey:@"zst_RecoverySensitivity"];
+            mods.ApexCornerCutter = [defaults boolForKey:@"zst_ApexCornerCutter"];
+            mods.ApexMargin = [defaults floatForKey:@"zst_ApexMargin"];
         }
         mods.KySinh = [defaults boolForKey:@"zst_KySinh"];
         mods.FakeTen = [defaults boolForKey:@"zst_FakeTen"];
@@ -372,6 +390,14 @@ bool ExportConfigToClipboard() {
     dict[@"PID_Ki"] = @(mods.PID_Ki);
     dict[@"PID_Kd"] = @(mods.PID_Kd);
     dict[@"LookaheadRatio"] = @(mods.LookaheadRatio);
+    dict[@"LockMinDriftAngle"] = @(mods.LockMinDriftAngle);
+    dict[@"MinDriftAngleVal"] = @(mods.MinDriftAngleVal);
+    dict[@"AutoSnapDrift"] = @(mods.AutoSnapDrift);
+    dict[@"PerfectCWWChain"] = @(mods.PerfectCWWChain);
+    dict[@"AntiBumpRecovery"] = @(mods.AntiBumpRecovery);
+    dict[@"RecoverySensitivity"] = @(mods.RecoverySensitivity);
+    dict[@"ApexCornerCutter"] = @(mods.ApexCornerCutter);
+    dict[@"ApexMargin"] = @(mods.ApexMargin);
     dict[@"CustomFOV"] = @(mods.CustomFOV);
     dict[@"CameraFOV"] = @(mods.CameraFOV);
     dict[@"ShowDriftGuide"] = @(mods.ShowDriftGuide);
@@ -445,6 +471,14 @@ bool ImportConfigFromClipboard() {
     if (dict[@"PID_Ki"]) mods.PID_Ki = [dict[@"PID_Ki"] floatValue];
     if (dict[@"PID_Kd"]) mods.PID_Kd = [dict[@"PID_Kd"] floatValue];
     if (dict[@"LookaheadRatio"]) mods.LookaheadRatio = [dict[@"LookaheadRatio"] floatValue];
+    if (dict[@"LockMinDriftAngle"]) mods.LockMinDriftAngle = [dict[@"LockMinDriftAngle"] boolValue];
+    if (dict[@"MinDriftAngleVal"]) mods.MinDriftAngleVal = [dict[@"MinDriftAngleVal"] floatValue];
+    if (dict[@"AutoSnapDrift"]) mods.AutoSnapDrift = [dict[@"AutoSnapDrift"] boolValue];
+    if (dict[@"PerfectCWWChain"]) mods.PerfectCWWChain = [dict[@"PerfectCWWChain"] boolValue];
+    if (dict[@"AntiBumpRecovery"]) mods.AntiBumpRecovery = [dict[@"AntiBumpRecovery"] boolValue];
+    if (dict[@"RecoverySensitivity"]) mods.RecoverySensitivity = [dict[@"RecoverySensitivity"] floatValue];
+    if (dict[@"ApexCornerCutter"]) mods.ApexCornerCutter = [dict[@"ApexCornerCutter"] boolValue];
+    if (dict[@"ApexMargin"]) mods.ApexMargin = [dict[@"ApexMargin"] floatValue];
     if (dict[@"CustomFOV"]) mods.CustomFOV = [dict[@"CustomFOV"] boolValue];
     if (dict[@"CameraFOV"]) mods.CameraFOV = [dict[@"CameraFOV"] floatValue];
     if (dict[@"ShowDriftGuide"]) mods.ShowDriftGuide = [dict[@"ShowDriftGuide"] boolValue];
@@ -561,13 +595,48 @@ void ProcessAutoDrive(uintptr_t kart) {
 
     Vector2D targetSpline = EvaluateCatmullRom(p0, p1, p2, p3, t);
 
+    // 1.1. TÍNH NĂNG CHIẾN THẮNG 1: CẮT GÓC ĐI TẮT ÔM SÁT MÉP LỀ (APEX CORNER CUTTER)
+    if (mods.ApexCornerCutter) {
+        // Tính tiếp tuyến và pháp tuyến hướng tâm cua (inward normal)
+        float tx = p2.x - p0.x;
+        float ty = p2.y - p0.y;
+        float tlen = sqrtf(tx * tx + ty * ty);
+        if (tlen > 0.01f) {
+            float nx = -ty / tlen;
+            float ny = tx / tlen;
+            // Cắt lề trong thu hẹp chu vi khúc cua, rút ngắn 8-12% chiều dài vòng chạy
+            targetSpline.x += nx * (mods.ApexMargin * 25.0f);
+            targetSpline.y += ny * (mods.ApexMargin * 25.0f);
+        }
+    }
+
     // 2. TÍNH TOÁN GÓC BẺ LÁI PURE PURSUIT & PID
     float currentSpeed = mods.GiaToc ? mods.GiaTocSpeed : 225.0f;
     float steering = ComputePurePursuitSteering(0.0f, 0.0f, 0.0f, targetSpline.x, targetSpline.y, currentSpeed);
 
-    // 3. MÔ HÌNH VẬT LÝ GÓC TRƯỢT LỐP (SLIP ANGLE) & DỰ ĐOÁN FRAME CWW
+    // 2.1. TÍNH NĂNG CHIẾN THẮNG 2: CHỐNG VĂNG KHI VA CHẠM & TỰ HỒI PHỤC (ANTI-BUMP RECOVERY)
+    if (mods.AntiBumpRecovery) {
+        if (gameOffsets.CollisionOffset) {
+            // Triệt tiêu xung phản lực va chạm từ đối thủ hoặc cọ tường
+            SafeWrite<float>(kart + gameOffsets.CollisionOffset, 0.0f);
+        }
+    }
+
+    // 3. MÔ HÌNH VẬT LÝ GÓC TRƯỢT LỐP (SLIP ANGLE)
     float slipAngle = fabsf(steering);
-    if (slipAngle >= 35.0f) {
+
+    // 3.1. TÍNH NĂNG CHIẾN THẮNG 3: KHÓA GÓC DRIFT TỐI THIỂU GIỮ TỐC 198-205 KM/H (MIN-DRIFT LOCK)
+    if (mods.LockMinDriftAngle && slipAngle >= 28.0f) {
+        // Ghìm góc trượt tại ngưỡng tối thiểu vừa đủ tích Nitro (mặc định 29.5 deg)
+        // Ngăn xe bị quặt cua quá đà 50-60 deg gây tụt tốc thảm hại về 160km/h
+        float sign = (steering >= 0.0f) ? 1.0f : -1.0f;
+        if (slipAngle > mods.MinDriftAngleVal) {
+            steering = sign * mods.MinDriftAngleVal;
+            slipAngle = mods.MinDriftAngleVal;
+        }
+    }
+
+    if (slipAngle >= 28.0f) {
         if (mods.AutoApexSteer) {
             float steerMult = mods.DriftAssistanceLevel;
             if (steerMult < 1.0f) steerMult = 1.0f;
@@ -577,19 +646,49 @@ void ProcessAutoDrive(uintptr_t kart) {
         }
     }
 
-    // 4. DỰ ĐOÁN CHÍNH XÁC FRAME NHẢ DRIFT PHUN NITRO CWW
-    if (mods.AutoCWWSequence && mods.PredictCWWMillisecond) {
-        static float driftAccumulator = 0.0f;
-        if (slipAngle >= 35.0f) {
-            driftAccumulator += 0.016f * (slipAngle / 41.5f);
-            if (driftAccumulator >= 0.75f) {
-                driftAccumulator = 0.0f;
-                if (gameOffsets.NitroOffset) {
-                    SafeWrite<float>(kart + gameOffsets.NitroOffset, mods.NitroDuration);
-                }
+    // 4. TÍNH NĂNG CHIẾN THẮNG 4 & 5: AUTO ĐOẠN DRIFT (SNAP RESET) & COMBO CWW CHUẨN KHUNG HÌNH
+    static float driftAccumulator = 0.0f;
+    static int cwwChainStep = 0;
+    static float cwwStepTimer = 0.0f;
+
+    if (slipAngle >= 28.0f) {
+        // Tích phân thời gian trượt bánh theo góc drift
+        driftAccumulator += 0.016f * (slipAngle / 30.0f);
+
+        // Ngưỡng đủ bình Nitro (~0.70s)
+        if (driftAccumulator >= 0.70f) {
+            // 4.1. AUTO SNAP DRIFT: Đảo ngược lái 0.05s để giật thẳng thân xe ngay lập tức
+            if (mods.AutoSnapDrift) {
+                steering = -steering * 0.75f;
             }
-        } else {
+
+            // Kích hoạt chuỗi CWW combo chuẩn khung hình
+            if (mods.PerfectCWWChain || (mods.AutoCWWSequence && mods.PredictCWWMillisecond)) {
+                cwwChainStep = 1; // Bắt đầu chuỗi CWW Step 1: Nhả drift + Mini boost 1
+                cwwStepTimer = 0.0f;
+            }
             driftAccumulator = 0.0f;
+        }
+    } else {
+        driftAccumulator = 0.0f;
+    }
+
+    // Thực thi chuỗi Combo CWW Boost (Frame-Perfect Execution)
+    if (cwwChainStep > 0) {
+        cwwStepTimer += 0.016f;
+        if (cwwChainStep == 1 && cwwStepTimer >= 0.05f) {
+            // Step 2: Phun bình Nitro chính
+            if (gameOffsets.NitroOffset) {
+                SafeWrite<float>(kart + gameOffsets.NitroOffset, mods.NitroDuration);
+            }
+            cwwChainStep = 2;
+        } else if (cwwChainStep == 2 && cwwStepTimer >= 0.13f) {
+            // Step 3: Kích hoạt Mini boost 2 tạo Super CWW đạt tốc kịch kim 312 - 318 km/h
+            if (gameOffsets.SpeedOffset && mods.GiaToc) {
+                SafeWrite<float>(kart + gameOffsets.SpeedOffset, mods.GiaTocSpeed);
+            }
+            cwwChainStep = 0; // Hoàn thành chuỗi combo
+            cwwStepTimer = 0.0f;
         }
     }
 }

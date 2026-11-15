@@ -74,6 +74,16 @@ struct Mods {
     float PID_Kd = 0.45f;              // Hệ số vi phân D (triệt tiêu rung lắc / rắn bò)
     float LookaheadRatio = 0.22f;      // Tỉ lệ khoảng cách nhìn trước L = k * v
     
+    // Bộ Tính Năng Chiến Thắng Thực Chiến (Competitive Winning Mechanics)
+    bool LockMinDriftAngle = true;     // Khóa góc drift tối thiểu giữ tốc 198-205 km/h
+    float MinDriftAngleVal = 29.5f;    // Góc drift tối thiểu (25.0 - 38.0 deg)
+    bool AutoSnapDrift = true;         // Auto Đoạn Drift / Snap bẻ thẳng xe tức thì
+    bool PerfectCWWChain = true;       // Combo chuỗi CWW chuẩn khung hình 100% max speed
+    bool AntiBumpRecovery = true;      // Chống văng khi va chạm & tự lấy lại lái tâm đường
+    float RecoverySensitivity = 0.15f; // Độ nhạy phục hồi sau va chạm (0.05 - 0.5s)
+    bool ApexCornerCutter = true;      // Cắt góc cua ôm sát mép lề (rút ngắn 8-12% đường)
+    float ApexMargin = 0.20f;          // Khoảng cách lề trong Apex (0.1 - 0.6m)
+    
     // Tab Nhân Vật / Xe
     bool KySinh = false;
     bool FakeTen = false;

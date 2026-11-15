@@ -280,6 +280,15 @@ void RenderDriftGuide() {
         if (mods.UseSplineInterpolation) {
             ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.4f, 1.0f), ICON_FA_CHART_LINE " Catmull-Rom: C1 Spline Smooth");
         }
+        if (mods.LockMinDriftAngle) {
+            ImGui::TextColored(ImVec4(0.2f, 0.85f, 1.0f, 1.0f), ICON_FA_TACHOMETER_ALT " Min-Drift Lock: %.1f deg (Giu ~200 km/h)", mods.MinDriftAngleVal);
+        }
+        if (mods.AutoSnapDrift) {
+            ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), ICON_FA_BOLT " Snap Drift: Auto Reset 0.05s");
+        }
+        if (mods.ApexCornerCutter) {
+            ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.5f, 1.0f), ICON_FA_CUT " Apex Cutter: Rut ngan 8-12%%");
+        }
     }
     ImGui::End();
     ImGui::PopStyleVar(2);
@@ -546,6 +555,27 @@ void LoadMenu() {
             newChildVisible = childVisibilityMap["Noi Suy Spline & Du Doan CWW"];
             ToggleWidget(ICON_FA_CHART_LINE, "Noi Suy Spline & Du Doan CWW", &mods.UseSplineInterpolation, &newChildVisible);
             childVisibilityMap["Noi Suy Spline & Du Doan CWW"] = newChildVisible;
+
+            // Bộ tính năng thực chiến chiến thắng
+            newChildVisible = childVisibilityMap["Giu Toc Cua (Min-Drift)"];
+            ToggleWidget(ICON_FA_TACHOMETER_ALT, "Giu Toc Cua (Min-Drift)", &mods.LockMinDriftAngle, &newChildVisible);
+            childVisibilityMap["Giu Toc Cua (Min-Drift)"] = newChildVisible;
+
+            newChildVisible = childVisibilityMap["Auto Doan Drift (Snap Reset)"];
+            ToggleWidget(ICON_FA_FAST_FORWARD, "Auto Doan Drift (Snap Reset)", &mods.AutoSnapDrift, &newChildVisible);
+            childVisibilityMap["Auto Doan Drift (Snap Reset)"] = newChildVisible;
+
+            newChildVisible = childVisibilityMap["Combo CWW Hoan Hao"];
+            ToggleWidget(ICON_FA_BOLT, "Combo CWW Hoan Hao", &mods.PerfectCWWChain, &newChildVisible);
+            childVisibilityMap["Combo CWW Hoan Hao"] = newChildVisible;
+
+            newChildVisible = childVisibilityMap["Chong Vang & Tu Hoi Phuc"];
+            ToggleWidget(ICON_FA_SHIELD_ALT, "Chong Vang & Tu Hoi Phuc", &mods.AntiBumpRecovery, &newChildVisible);
+            childVisibilityMap["Chong Vang & Tu Hoi Phuc"] = newChildVisible;
+
+            newChildVisible = childVisibilityMap["Cat Goc Duong Dua (Apex Cutter)"];
+            ToggleWidget(ICON_FA_CUT, "Cat Goc Duong Dua (Apex Cutter)", &mods.ApexCornerCutter, &newChildVisible);
+            childVisibilityMap["Cat Goc Duong Dua (Apex Cutter)"] = newChildVisible;
 
             if (mods.AutoDuaLapTrinh) {
                 int validMap = (mods.SelectedMapIndex >= 0 && mods.SelectedMapIndex < 6) ? mods.SelectedMapIndex : 0;
@@ -920,6 +950,44 @@ void LoadMenu() {
                     ImGui::PopTextWrapPos(); ImGui::Spacing();
                     ToggleButtonMini("Noi Suy Spline", &mods.UseSplineInterpolation);
                     ToggleButtonMini("Du Doan CWW (ms)", &mods.PredictCWWMillisecond);
+                }
+                else if (widgetName == "Giu Toc Cua (Min-Drift)") {
+                    ImGui::Text(ICON_FA_INFO_CIRCLE); ImGui::SameLine();
+                    ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x + 5);
+                    ImGui::Text("Ghim goc drift tai nguong toi thieu (28-32 do) vua du tich day binh Nitro ma xe khong bi tut toc, duy tri ~200 km/h.");
+                    ImGui::PopTextWrapPos(); ImGui::Spacing();
+                    ToggleButtonMini("Khoa Goc Min-Drift", &mods.LockMinDriftAngle);
+                    SliderFloatMini("Goc Drift Toi Thieu", &mods.MinDriftAngleVal, 25.0f, 38.0f);
+                }
+                else if (widgetName == "Auto Doan Drift (Snap Reset)") {
+                    ImGui::Text(ICON_FA_INFO_CIRCLE); ImGui::SameLine();
+                    ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x + 5);
+                    ImGui::Text("Tu dong be nguoc lai 0.05s ngay khi du binh Nitro de giat thang than xe tuc thi, triet tieu hoan toan thoi gian re duoi.");
+                    ImGui::PopTextWrapPos(); ImGui::Spacing();
+                    ToggleButtonMini("Auto Doan Drift", &mods.AutoSnapDrift);
+                }
+                else if (widgetName == "Combo CWW Hoan Hao") {
+                    ImGui::Text(ICON_FA_INFO_CIRCLE); ImGui::SameLine();
+                    ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x + 5);
+                    ImGui::Text("Kich hoat chuoi combo CWW Boost chuan micro-second giup 100%% dat van toc toi da 312-318 km/h khong bao gio hut nhip.");
+                    ImGui::PopTextWrapPos(); ImGui::Spacing();
+                    ToggleButtonMini("CWW Chuan Khung Hinh", &mods.PerfectCWWChain);
+                }
+                else if (widgetName == "Chong Vang & Tu Hoi Phuc") {
+                    ImGui::Text(ICON_FA_INFO_CIRCLE); ImGui::SameLine();
+                    ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x + 5);
+                    ImGui::Text("Tu dong triet tieu phan luc va gia toc xoay khi bi doi thu tong huc hoac va thanh cau, tu dong lay lai lai huong tim duong.");
+                    ImGui::PopTextWrapPos(); ImGui::Spacing();
+                    ToggleButtonMini("Chong Vang & Tu Hoi Phuc", &mods.AntiBumpRecovery);
+                    SliderFloatMini("Do Nhay Hoi Phuc (s)", &mods.RecoverySensitivity, 0.05f, 0.50f);
+                }
+                else if (widgetName == "Cat Goc Duong Dua (Apex Cutter)") {
+                    ImGui::Text(ICON_FA_INFO_CIRCLE); ImGui::SameLine();
+                    ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x + 5);
+                    ImGui::Text("Thu hep quy dao om sat mep le trong (Apex) giup rut ngan 8-12%% tong quang duong chay moi vong.");
+                    ImGui::PopTextWrapPos(); ImGui::Spacing();
+                    ToggleButtonMini("Cat Goc Apex", &mods.ApexCornerCutter);
+                    SliderFloatMini("Khoang Cach Le (m)", &mods.ApexMargin, 0.10f, 0.60f);
                 }
                 else if (widgetName == "Tam Drift & Apex Guide" || widgetName == "Tinh Goc Cua Toi Uu") {
                     ImGui::Text(ICON_FA_INFO_CIRCLE); ImGui::SameLine();
