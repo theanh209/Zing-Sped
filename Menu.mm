@@ -289,6 +289,8 @@ void RenderDriftGuide() {
         if (mods.ApexCornerCutter) {
             ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.5f, 1.0f), ICON_FA_CUT " Apex Cutter: Rut ngan 8-12%%");
         }
+        ImGui::TextColored(ImVec4(0.3f, 1.0f, 0.7f, 1.0f), ICON_FA_MAP_MARKER_ALT " Toa Do: X: %.1f | Z: %.1f | Yaw: %.1f deg [WP: %d/%d]",
+            g_playerPos.x, g_playerPos.z, g_playerYaw, g_currentWaypointIndex + 1, g_totalWaypoints);
     }
     ImGui::End();
     ImGui::PopStyleVar(2);
@@ -580,7 +582,8 @@ void LoadMenu() {
             if (mods.AutoDuaLapTrinh) {
                 int validMap = (mods.SelectedMapIndex >= 0 && mods.SelectedMapIndex < 6) ? mods.SelectedMapIndex : 0;
                 ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.2f, 1.0f), ICON_FA_CHECK_CIRCLE " Auto Lai: Dang chay quy dao toi uu!");
-                ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.2f, 1.0f), ICON_FA_MAP_PIN " Ban do: %s", mapNames[validMap]);
+                ImGui::TextColored(ImVec4(0.3f, 0.85f, 1.0f, 1.0f), ICON_FA_LOCATION_ARROW " Toa Do Xe: X=%.1f | Z=%.1f (Yaw=%.1f deg)", g_playerPos.x, g_playerPos.z, g_playerYaw);
+                ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.2f, 1.0f), ICON_FA_MAP_PIN " Ban Do: %s [Moc WP: %d/%d]", mapNames[validMap], g_currentWaypointIndex + 1, g_totalWaypoints);
             }
         }
         ImGui::EndChild();

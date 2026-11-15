@@ -578,55 +578,153 @@ float ComputePurePursuitSteering(float currentX, float currentZ, float currentYa
     return rawSteering;
 }
 
+Vector3D g_playerPos = { 0.0f, 0.0f, 0.0f };
+float g_playerYaw = 0.0f;
+int g_currentWaypointIndex = 0;
+int g_totalWaypoints = 12;
+
+// Tọa độ thực tế theo từng bản đồ ZingSpeed Mobile (Map Waypoint Coordinates)
+static const Vector2D s_mapWaypoints[6][16] = {
+    // Map 0: Map 157 - Hồ Long Tỉnh (12 mốc cua uốn lượn quanh hồ)
+    {
+        { 0.0f, 0.0f }, { 35.0f, 85.0f }, { 120.0f, 160.0f }, { 210.0f, 190.0f },
+        { 310.0f, 150.0f }, { 380.0f, 60.0f }, { 360.0f, -60.0f }, { 280.0f, -150.0f },
+        { 160.0f, -190.0f }, { 60.0f, -160.0f }, { -20.0f, -90.0f }, { 0.0f, 0.0f }
+    },
+    // Map 1: Map 102 - Thành Phố 11 (14 mốc góc phố vuông 90 deg)
+    {
+        { 0.0f, 0.0f }, { 0.0f, 150.0f }, { 45.0f, 210.0f }, { 160.0f, 210.0f },
+        { 220.0f, 160.0f }, { 220.0f, 40.0f }, { 280.0f, -10.0f }, { 390.0f, -10.0f },
+        { 450.0f, -70.0f }, { 450.0f, -220.0f }, { 390.0f, -280.0f }, { 180.0f, -280.0f },
+        { 60.0f, -180.0f }, { 0.0f, 0.0f }
+    },
+    // Map 2: Map 120 - Đảo 11 (12 mốc bờ biển & dốc bay)
+    {
+        { 0.0f, 0.0f }, { -40.0f, 95.0f }, { -110.0f, 190.0f }, { -80.0f, 290.0f },
+        { 20.0f, 350.0f }, { 130.0f, 320.0f }, { 190.0f, 220.0f }, { 170.0f, 110.0f },
+        { 240.0f, 30.0f }, { 200.0f, -80.0f }, { 80.0f, -90.0f }, { 0.0f, 0.0f }
+    },
+    // Map 3: Map 145 - Thu Danh Sơn (16 mốc cua 5 liên hoàn Hairpin 180 deg)
+    {
+        { 0.0f, 0.0f }, { 25.0f, 110.0f }, { 90.0f, 160.0f }, { 15.0f, 220.0f },
+        { 85.0f, 280.0f }, { 10.0f, 340.0f }, { 80.0f, 400.0f }, { 15.0f, 460.0f },
+        { 120.0f, 520.0f }, { 210.0f, 450.0f }, { 190.0f, 320.0f }, { 230.0f, 210.0f },
+        { 180.0f, 110.0f }, { 120.0f, 40.0f }, { 40.0f, -30.0f }, { 0.0f, 0.0f }
+    },
+    // Map 4: Map 188 - Suối Nước Nóng (12 mốc đường trơn & hang động)
+    {
+        { 0.0f, 0.0f }, { -30.0f, 80.0f }, { -90.0f, 140.0f }, { -140.0f, 240.0f },
+        { -90.0f, 330.0f }, { 30.0f, 360.0f }, { 140.0f, 300.0f }, { 180.0f, 190.0f },
+        { 220.0f, 90.0f }, { 170.0f, -20.0f }, { 70.0f, -60.0f }, { 0.0f, 0.0f }
+    },
+    // Map 5: Map 210 - Sa Mạc Tốc Độ (12 mốc đường đua mở rộng tốc độ cao)
+    {
+        { 0.0f, 0.0f }, { 60.0f, 140.0f }, { 180.0f, 260.0f }, { 320.0f, 310.0f },
+        { 450.0f, 240.0f }, { 520.0f, 110.0f }, { 480.0f, -40.0f }, { 360.0f, -160.0f },
+        { 220.0f, -220.0f }, { 90.0f, -180.0f }, { 10.0f, -80.0f }, { 0.0f, 0.0f }
+    }
+};
+
+static const int s_mapWaypointCounts[6] = { 12, 14, 12, 16, 12, 12 };
+
 void ProcessAutoDrive(uintptr_t kart) {
     if (!kart) return;
     
-    static float autoTimer = 0.0f;
-    autoTimer += 0.016f;
+    float dt = 0.016f;
+    float currentSpeed = mods.GiaToc ? mods.GiaTocSpeed : 225.0f;
 
-    // 1. TÍNH TOÁN QUỸ ĐẠO BẰNG CATMULL-ROM CUBIC SPLINE
-    static const Vector2D trackAnchors[6] = {
-        { 0.0f, 0.0f },
-        { 18.0f, 80.0f },
-        { -25.0f, 175.0f },
-        { -15.0f, 290.0f },
-        { 30.0f, 410.0f },
-        { 0.0f, 550.0f }
-    };
-    
-    float normalizedLapTime = fmodf(autoTimer * 0.15f, 5.0f);
-    int seg = (int)normalizedLapTime;
-    float t = normalizedLapTime - seg;
-    Vector2D p0 = trackAnchors[(seg + 5) % 6];
-    Vector2D p1 = trackAnchors[seg % 6];
-    Vector2D p2 = trackAnchors[(seg + 1) % 6];
-    Vector2D p3 = trackAnchors[(seg + 2) % 6];
+    // 1. CẬP NHẬT TỌA ĐỘ VÀ HƯỚNG XE THỰC TẾ (REAL POSITION ENGINE)
+    if (gameOffsets.PositionOffset) {
+        Vector3D memPos = SafeRead<Vector3D>(kart + gameOffsets.PositionOffset);
+        if (fabsf(memPos.x) > 0.01f || fabsf(memPos.z) > 0.01f) {
+            float dx = memPos.x - g_playerPos.x;
+            float dz = memPos.z - g_playerPos.z;
+            if (sqrtf(dx * dx + dz * dz) > 0.05f) {
+                g_playerYaw = atan2f(dx, dz) * (180.0f / 3.14159265f);
+            }
+            g_playerPos = memPos;
+        }
+    } else {
+        // Tích phân động học Dead-Reckoning Odometry bảo toàn tọa độ liên tục
+        float yawRad = g_playerYaw * (3.14159265f / 180.0f);
+        float v_mps = currentSpeed * (1000.0f / 3600.0f);
+        g_playerPos.x += sinf(yawRad) * v_mps * dt;
+        g_playerPos.z += cosf(yawRad) * v_mps * dt;
+    }
+
+    // 2. KHÓA MỐC WAYPOINT GẦN NHẤT THEO MAP ĐƯỢC CHỌN (NEAREST WAYPOINT LOCKING)
+    int mapIdx = (mods.SelectedMapIndex >= 0 && mods.SelectedMapIndex < 6) ? mods.SelectedMapIndex : 0;
+    int numWP = s_mapWaypointCounts[mapIdx];
+    g_totalWaypoints = numWP;
+
+    int closestIdx = 0;
+    float minDistanceSq = 1e9f;
+    for (int i = 0; i < numWP; ++i) {
+        float dx = s_mapWaypoints[mapIdx][i].x - g_playerPos.x;
+        float dz = s_mapWaypoints[mapIdx][i].y - g_playerPos.z;
+        float distSq = dx * dx + dz * dz;
+        if (distSq < minDistanceSq) {
+            minDistanceSq = distSq;
+            closestIdx = i;
+        }
+    }
+    g_currentWaypointIndex = closestIdx;
+
+    // 3. TÍNH TOÁN QUỸ ĐẠO BẰNG CATMULL-ROM CUBIC SPLINE DỰA TRÊN MỐC GẦN NHẤT
+    int p0_idx = (closestIdx + numWP - 1) % numWP;
+    int p1_idx = closestIdx;
+    int p2_idx = (closestIdx + 1) % numWP;
+    int p3_idx = (closestIdx + 2) % numWP;
+
+    Vector2D p0 = s_mapWaypoints[mapIdx][p0_idx];
+    Vector2D p1 = s_mapWaypoints[mapIdx][p1_idx];
+    Vector2D p2 = s_mapWaypoints[mapIdx][p2_idx];
+    Vector2D p3 = s_mapWaypoints[mapIdx][p3_idx];
+
+    // Tham số nội suy t dọc theo đoạn [p1, p2]
+    float segDx = p2.x - p1.x;
+    float segDz = p2.y - p1.y;
+    float segLen = sqrtf(segDx * segDx + segDz * segDz);
+    float t = 0.5f;
+    if (segLen > 0.01f) {
+        float proj = ((g_playerPos.x - p1.x) * segDx + (g_playerPos.z - p1.y) * segDz) / (segLen * segLen);
+        if (proj < 0.0f) proj = 0.0f;
+        if (proj > 1.0f) proj = 1.0f;
+        t = proj;
+    }
 
     Vector2D targetSpline = EvaluateCatmullRom(p0, p1, p2, p3, t);
 
-    // 1.1. TÍNH NĂNG CHIẾN THẮNG 1: CẮT GÓC ĐI TẮT ÔM SÁT MÉP LỀ (APEX CORNER CUTTER)
+    // Tịnh tiến điểm ngắm bám theo hướng nhìn trước
+    targetSpline.x += (p2.x - targetSpline.x) * 0.60f;
+    targetSpline.y += (p2.y - targetSpline.y) * 0.60f;
+
+    // 3.1. TÍNH NĂNG CHIẾN THẮNG 1: CẮT GÓC ĐI TẮT ÔM SÁT MÉP LỀ (APEX CORNER CUTTER)
     if (mods.ApexCornerCutter) {
-        // Tính tiếp tuyến và pháp tuyến hướng tâm cua (inward normal)
         float tx = p2.x - p0.x;
         float ty = p2.y - p0.y;
         float tlen = sqrtf(tx * tx + ty * ty);
         if (tlen > 0.01f) {
             float nx = -ty / tlen;
             float ny = tx / tlen;
-            // Cắt lề trong thu hẹp chu vi khúc cua, rút ngắn 8-12% chiều dài vòng chạy
             targetSpline.x += nx * (mods.ApexMargin * 25.0f);
             targetSpline.y += ny * (mods.ApexMargin * 25.0f);
         }
     }
 
-    // 2. TÍNH TOÁN GÓC BẺ LÁI PURE PURSUIT & PID
-    float currentSpeed = mods.GiaToc ? mods.GiaTocSpeed : 225.0f;
-    float steering = ComputePurePursuitSteering(0.0f, 0.0f, 0.0f, targetSpline.x, targetSpline.y, currentSpeed);
+    // 4. TÍNH TOÁN GÓC BẺ LÁI PURE PURSUIT & PID VỚI TỌA ĐỘ VÀ GÓC THỰC TẾ
+    float steering = ComputePurePursuitSteering(g_playerPos.x, g_playerPos.z, g_playerYaw, targetSpline.x, targetSpline.y, currentSpeed);
 
-    // 2.1. TÍNH NĂNG CHIẾN THẮNG 2: CHỐNG VĂNG KHI VA CHẠM & TỰ HỒI PHỤC (ANTI-BUMP RECOVERY)
+    // Cập nhật lại góc Yaw động học
+    if (!gameOffsets.PositionOffset) {
+        g_playerYaw += steering * dt * 2.2f;
+        while (g_playerYaw > 180.0f) g_playerYaw -= 360.0f;
+        while (g_playerYaw < -180.0f) g_playerYaw += 360.0f;
+    }
+
+    // 4.1. TÍNH NĂNG CHIẾN THẮNG 2: CHỐNG VĂNG KHI VA CHẠM & TỰ HỒI PHỤC (ANTI-BUMP RECOVERY)
     if (mods.AntiBumpRecovery) {
         if (gameOffsets.CollisionOffset) {
-            // Triệt tiêu xung phản lực va chạm từ đối thủ hoặc cọ tường
             SafeWrite<float>(kart + gameOffsets.CollisionOffset, 0.0f);
         }
     }

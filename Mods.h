@@ -145,6 +145,17 @@ struct Vector2D {
     float y;
 };
 
+struct Vector3D {
+    float x;
+    float y;
+    float z;
+};
+
+extern Vector3D g_playerPos;
+extern float g_playerYaw;
+extern int g_currentWaypointIndex;
+extern int g_totalWaypoints;
+
 Vector2D EvaluateCatmullRom(Vector2D p0, Vector2D p1, Vector2D p2, Vector2D p3, float t);
 float ComputePurePursuitSteering(float currentX, float currentZ, float currentYaw, float targetX, float targetZ, float speed);
 
