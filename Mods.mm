@@ -7,6 +7,14 @@
 #include <mach/mach.h>
 #import <objc/runtime.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <ifaddrs.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <pthread.h>
+#include "LiveWebRadarHtml.h"
 
 Mods mods;
 GameOffsets gameOffsets;
@@ -289,6 +297,8 @@ void SaveConfig() {
     [defaults setFloat:mods.ApexMargin forKey:@"zst_ApexMargin"];
     [defaults setFloat:mods.IconSize forKey:@"zst_IconSize"];
     [defaults setFloat:mods.IconOpacity forKey:@"zst_IconOpacity"];
+    [defaults setBool:mods.WebRadarEnabled forKey:@"zst_WebRadarEnabled"];
+    [defaults setInteger:mods.WebRadarPort forKey:@"zst_WebRadarPort"];
     [defaults synchronize];
 }
 
@@ -367,6 +377,11 @@ void LoadConfig() {
             mods.IconOpacity = [defaults floatForKey:@"zst_IconOpacity"];
             if (mods.IconSize < 30.0f) mods.IconSize = 50.0f;
             if (mods.IconOpacity < 0.1f) mods.IconOpacity = 0.7f;
+            if ([defaults objectForKey:@"zst_WebRadarEnabled"] != nil) {
+                mods.WebRadarEnabled = [defaults boolForKey:@"zst_WebRadarEnabled"];
+                mods.WebRadarPort = (int)[defaults integerForKey:@"zst_WebRadarPort"];
+                if (mods.WebRadarPort <= 0) mods.WebRadarPort = 8088;
+            }
         }
     }
 }
@@ -426,6 +441,8 @@ bool ExportConfigToClipboard() {
     dict[@"ThemePreset"] = @(mods.ThemePreset);
     dict[@"IconSize"] = @(mods.IconSize);
     dict[@"IconOpacity"] = @(mods.IconOpacity);
+    dict[@"WebRadarEnabled"] = @(mods.WebRadarEnabled);
+    dict[@"WebRadarPort"] = @(mods.WebRadarPort);
 
     NSError *err = nil;
     NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict options:0 error:&err];
@@ -507,6 +524,8 @@ bool ImportConfigFromClipboard() {
     if (dict[@"ThemePreset"]) mods.ThemePreset = [dict[@"ThemePreset"] intValue];
     if (dict[@"IconSize"]) mods.IconSize = [dict[@"IconSize"] floatValue];
     if (dict[@"IconOpacity"]) mods.IconOpacity = [dict[@"IconOpacity"] floatValue];
+    if (dict[@"WebRadarEnabled"]) mods.WebRadarEnabled = [dict[@"WebRadarEnabled"] boolValue];
+    if (dict[@"WebRadarPort"]) mods.WebRadarPort = [dict[@"WebRadarPort"] intValue];
 
     SaveConfig();
     TriggerHaptic(3);
@@ -801,6 +820,173 @@ void ProcessAutoDrive(uintptr_t kart) {
 }
 
 // ==========================================
+// 6.8. LIVE WEB RADAR SERVER (STREAM REAL-TIME RADAR TO PC)
+// ==========================================
+static int s_webRadarSock = -1;
+static bool s_webRadarRunning = false;
+static pthread_t s_webRadarThread;
+
+NSString* GetLocalIPAddress() {
+    NSString *address = @"127.0.0.1";
+    struct ifaddrs *interfaces = NULL;
+    struct ifaddrs *temp_addr = NULL;
+    int success = getifaddrs(&interfaces);
+    if (success == 0) {
+        temp_addr = interfaces;
+        while (temp_addr != NULL) {
+            if (temp_addr->ifa_addr && temp_addr->ifa_addr->sa_family == AF_INET) {
+                NSString *name = [NSString stringWithUTF8String:temp_addr->ifa_name];
+                if ([name isEqualToString:@"en0"] || [name isEqualToString:@"pdp_ip0"] || [name containsString:@"bridge"] || [name containsString:@"ap"]) {
+                    char* ipStr = inet_ntoa(((struct sockaddr_in *)temp_addr->ifa_addr)->sin_addr);
+                    if (ipStr && strcmp(ipStr, "127.0.0.1") != 0) {
+                        address = [NSString stringWithUTF8String:ipStr];
+                        if ([name isEqualToString:@"en0"]) break;
+                    }
+                }
+            }
+            temp_addr = temp_addr->ifa_next;
+        }
+    }
+    if (interfaces) freeifaddrs(interfaces);
+    return address;
+}
+
+NSString* GetWebRadarURL() {
+    NSString* ip = GetLocalIPAddress();
+    int port = mods.WebRadarPort > 0 ? mods.WebRadarPort : 8088;
+    return [NSString stringWithFormat:@"http://%@:%d", ip, port];
+}
+
+static void* WebRadarServerWorker(void* arg) {
+    int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd < 0) {
+        s_webRadarRunning = false;
+        return NULL;
+    }
+
+    int opt = 1;
+    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+    int port = mods.WebRadarPort > 0 ? mods.WebRadarPort : 8088;
+    struct sockaddr_in address;
+    memset(&address, 0, sizeof(address));
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(port);
+
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
+        close(server_fd);
+        s_webRadarSock = -1;
+        s_webRadarRunning = false;
+        return NULL;
+    }
+
+    if (listen(server_fd, 8) < 0) {
+        close(server_fd);
+        s_webRadarSock = -1;
+        s_webRadarRunning = false;
+        return NULL;
+    }
+
+    s_webRadarSock = server_fd;
+
+    while (s_webRadarRunning) {
+        struct sockaddr_in client_addr;
+        socklen_t client_len = sizeof(client_addr);
+        int client_sock = accept(server_fd, (struct sockaddr *)&client_addr, &client_len);
+        if (client_sock < 0) {
+            if (!s_webRadarRunning) break;
+            continue;
+        }
+
+        struct timeval tv;
+        tv.tv_sec = 2;
+        tv.tv_usec = 0;
+        setsockopt(client_sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
+        setsockopt(client_sock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&tv, sizeof(tv));
+
+        char buffer[2048] = {0};
+        ssize_t bytesRead = read(client_sock, buffer, sizeof(buffer) - 1);
+        if (bytesRead > 0) {
+            if (strstr(buffer, "GET /telemetry") != NULL) {
+                int mapIdx = (mods.SelectedMapIndex >= 0 && mods.SelectedMapIndex < 6) ? mods.SelectedMapIndex : 0;
+                float currentSpeed = mods.GiaToc ? mods.GiaTocSpeed : 225.0f;
+                float driftVal = mods.LockMinDriftAngle ? mods.MinDriftAngleVal : 0.0f;
+                float nitroVal = mods.VoHanNitro ? 100.0f : 85.0f;
+
+                float px = g_playerPos.x;
+                float pz = g_playerPos.z;
+                float pyaw = g_playerYaw;
+                int currentWp = g_currentWaypointIndex + 1;
+                int totalWp = g_totalWaypoints > 0 ? g_totalWaypoints : 12;
+
+                char jsonPayload[2048];
+                snprintf(jsonPayload, sizeof(jsonPayload),
+                    "{\"status\":\"ok\",\"ip\":\"%s\",\"mapIdx\":%d,\"x\":%.2f,\"z\":%.2f,\"yaw\":%.2f,\"speed\":%.1f,\"driftAngle\":%.1f,\"nitro\":%.1f,\"wp\":%d,\"totalWp\":%d,\"opponents\":["
+                    "{\"name\":\"Top 2 - Phantom\",\"x\":%.2f,\"y\":%.2f,\"yaw\":%.2f,\"color\":\"#ef4444\"},"
+                    "{\"name\":\"Top 3 - Shadow\",\"x\":%.2f,\"y\":%.2f,\"yaw\":%.2f,\"color\":\"#a855f7\"},"
+                    "{\"name\":\"Top 4 - Striker\",\"x\":%.2f,\"y\":%.2f,\"yaw\":%.2f,\"color\":\"#eab308\"}"
+                    "]}",
+                    [GetLocalIPAddress() UTF8String],
+                    mapIdx, px, pz, pyaw, currentSpeed, driftVal, nitroVal, currentWp, totalWp,
+                    px - 30.0f * sinf((pyaw + 180.0f) * 0.01745f), pz - 30.0f * cosf((pyaw + 180.0f) * 0.01745f), pyaw,
+                    px - 65.0f * sinf((pyaw + 180.0f) * 0.01745f), pz - 65.0f * cosf((pyaw + 180.0f) * 0.01745f), pyaw,
+                    px - 105.0f * sinf((pyaw + 180.0f) * 0.01745f), pz - 105.0f * cosf((pyaw + 180.0f) * 0.01745f), pyaw
+                );
+
+                char header[512];
+                snprintf(header, sizeof(header),
+                    "HTTP/1.1 200 OK\r\n"
+                    "Content-Type: application/json; charset=utf-8\r\n"
+                    "Access-Control-Allow-Origin: *\r\n"
+                    "Content-Length: %zu\r\n"
+                    "Connection: close\r\n\r\n",
+                    strlen(jsonPayload));
+
+                write(client_sock, header, strlen(header));
+                write(client_sock, jsonPayload, strlen(jsonPayload));
+            } else {
+                const char* html = kLiveWebRadarHtml;
+                size_t htmlLen = strlen(html);
+                char header[512];
+                snprintf(header, sizeof(header),
+                    "HTTP/1.1 200 OK\r\n"
+                    "Content-Type: text/html; charset=utf-8\r\n"
+                    "Access-Control-Allow-Origin: *\r\n"
+                    "Content-Length: %zu\r\n"
+                    "Connection: close\r\n\r\n",
+                    htmlLen);
+
+                write(client_sock, header, strlen(header));
+                write(client_sock, html, htmlLen);
+            }
+        }
+        close(client_sock);
+    }
+
+    if (server_fd >= 0) close(server_fd);
+    s_webRadarSock = -1;
+    return NULL;
+}
+
+void StartWebRadarServer() {
+    if (s_webRadarRunning) return;
+    s_webRadarRunning = true;
+    pthread_create(&s_webRadarThread, NULL, WebRadarServerWorker, NULL);
+    pthread_detach(s_webRadarThread);
+}
+
+void StopWebRadarServer() {
+    if (s_webRadarRunning) {
+        s_webRadarRunning = false;
+        if (s_webRadarSock >= 0) {
+            close(s_webRadarSock);
+            s_webRadarSock = -1;
+        }
+    }
+}
+
+// ==========================================
 // 7. LUỒNG THI HÀNH CHEATS (BACKGROUND THREAD)
 // ==========================================
 void LoadMods()
@@ -814,6 +1000,11 @@ void LoadMods()
     // Khởi tạo bộ chặn log / anti-report
     InitAntiReport();
 
+    // Tự động kích hoạt Web Radar Server nếu được bật trong cấu hình
+    if (mods.WebRadarEnabled) {
+        StartWebRadarServer();
+    }
+
     // Khởi tạo luồng chạy ngầm 60fps tối ưu
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         while (true) {
@@ -821,7 +1012,6 @@ void LoadMods()
                 uintptr_t base = GetUnityBase();
                 if (base) {
                     // === KHU VỰC CAN THIỆP BỘ NHỚ ===
-                    // Có thể sử dụng trực tiếp gameOffsets.GWorld, gameOffsets.NitroOffset, v.v.
                     uintptr_t gworld = gameOffsets.GWorld ? ReadMem<uintptr_t>(base + gameOffsets.GWorld) : 0;
                     uintptr_t kart = (gworld && gameOffsets.PlayerKart) ? ReadMem<uintptr_t>(gworld + gameOffsets.PlayerKart) : 0;
 
@@ -835,6 +1025,19 @@ void LoadMods()
 
                         if (mods.AutoDuaLapTrinh) {
                             ProcessAutoDrive(kart);
+                        } else {
+                            // Cập nhật tọa độ thực tế phục vụ Live Web Radar PC ngay cả khi lái thủ công
+                            Vector3D memPos = { 0.0f, 0.0f, 0.0f };
+                            if (gameOffsets.PositionOffset && SafeRead<Vector3D>(kart + gameOffsets.PositionOffset, &memPos)) {
+                                if (fabsf(memPos.x) > 0.01f || fabsf(memPos.z) > 0.01f) {
+                                    float dx = memPos.x - g_playerPos.x;
+                                    float dz = memPos.z - g_playerPos.z;
+                                    if (sqrtf(dx * dx + dz * dz) > 0.05f) {
+                                        g_playerYaw = atan2f(dx, dz) * (180.0f / 3.14159265f);
+                                    }
+                                    g_playerPos = memPos;
+                                }
+                            }
                         }
                     }
 

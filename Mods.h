@@ -109,6 +109,8 @@ struct Mods {
     bool AntiCollision = false;    // Giảm va chạm nảy xe cọ tường
     bool AntiReport = true;        // Chặn log / report gửi về server VNG
     bool BlockAnalytics = true;    // Chặn telemetry / crashlytics
+    bool WebRadarEnabled = false; // Chia sẻ Live Radar lên trình duyệt máy tính
+    int WebRadarPort = 8088;      // Cổng Web Server Radar (mặc định 8088)
 
     // Tùy biến Menu & Hệ thống (Tab 4)
     bool HapticFeedback = true;    // Rung phản hồi iPhone
@@ -139,6 +141,9 @@ bool ImportConfigFromClipboard();
 void LoadDynamicOffsets();
 void SaveDefaultOffsetsFile();
 void ResetMatchTimer();
+void StartWebRadarServer();
+void StopWebRadarServer();
+NSString* GetWebRadarURL();
 
 struct Vector2D {
     float x;

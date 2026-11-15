@@ -725,6 +725,44 @@ void LoadMenu() {
                 ResetMatchTimer();
                 Console::logInfo("Da dat lai dong ho bam gio tran!");
             }
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            // THẺ CHIA SẺ LIVE RADAR LÊN MÁY TÍNH (WEB RADAR SERVER)
+            ImGui::TextColored(ImVec4(0.0f, 0.95f, 1.0f, 1.0f), ICON_FA_DESKTOP " Web Radar Server (Truyen Hinh Live PC):");
+            newChildVisible = childVisibilityMap["Bat Web Radar Server"];
+            bool prevWebRadar = mods.WebRadarEnabled;
+            ToggleWidget(ICON_FA_WIFI, "Bat Web Radar Server", &mods.WebRadarEnabled, &newChildVisible);
+            childVisibilityMap["Bat Web Radar Server"] = newChildVisible;
+
+            if (mods.WebRadarEnabled != prevWebRadar) {
+                if (mods.WebRadarEnabled) {
+                    StartWebRadarServer();
+                    SaveConfig();
+                    Console::logSuccess([[NSString stringWithFormat:@"Web Radar Server khoi dong tai: %@", GetWebRadarURL()] UTF8String]);
+                } else {
+                    StopWebRadarServer();
+                    SaveConfig();
+                    Console::logInfo("Da tat Web Radar Server.");
+                }
+            }
+
+            if (mods.WebRadarEnabled) {
+                NSString* currentURL = GetWebRadarURL();
+                ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.4f, 1.0f), "Link Xem PC: %s", [currentURL UTF8String]);
+                ImGui::TextDisabled("Nhap link tren vao trinh duyet PC de xem radar 60 FPS");
+
+                if (ImGui::Button(ICON_FA_COPY "  Sao Chep Link May Tinh (URL)", ImVec2(ImGui::GetContentRegionAvail().x, 28))) {
+                    TriggerHaptic(0);
+                    PlayBeepSound(1057);
+                    [UIPasteboard generalPasteboard].string = currentURL;
+                    Console::logSuccess([[NSString stringWithFormat:@"Da sao chep link Web Radar: %@", currentURL] UTF8String]);
+                }
+            } else {
+                ImGui::TextDisabled("Server dang tat. Bat de tao duong dan xem radar live tren PC.");
+            }
         }
         ImGui::EndChild();
     }
