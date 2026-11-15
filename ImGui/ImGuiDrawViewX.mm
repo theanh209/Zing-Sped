@@ -14,12 +14,14 @@
 @implementation ImGuiDrawViewX
 
 static BOOL menuVisible = YES;
+static ImGuiDrawViewX *sharedInstance = nil;
 extern MenuInteraction* menuTouchView;
 
 - (instancetype)initWithNibName:(nullable NSString *)nibNameOrNil bundle:(nullable NSBundle *)nibBundleOrNil {
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
 
     if (self) {
+        sharedInstance = self;
         _device = MTLCreateSystemDefaultDevice();
         _commandQueue = [_device newCommandQueue];
 
@@ -68,6 +70,14 @@ extern MenuInteraction* menuTouchView;
     return menuVisible;
 }
 
++ (void)setTargetFPS:(NSInteger)fps {
+    if (sharedInstance && sharedInstance.mtkView) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            sharedInstance.mtkView.preferredFramesPerSecond = fps;
+        });
+    }
+}
+
 // Hàm getter này kết hợp với property readonly trong .h sẽ cho phép gọi .mtkView
 - (MTKView *)mtkView {
     return (MTKView *)self.view;
@@ -81,11 +91,15 @@ extern MenuInteraction* menuTouchView;
 - (void)viewDidLoad {
     [super viewDidLoad];
 
+    sharedInstance = self;
     self.mtkView.device = self.device;
     self.mtkView.delegate = self;
     self.mtkView.clearColor = MTLClearColorMake(0, 0, 0, 0);
     self.mtkView.backgroundColor = [UIColor clearColor];
     self.mtkView.clipsToBounds = YES;
+    
+    NSInteger initialFPS = (mods.TargetFPS >= 30 && mods.TargetFPS <= 120) ? mods.TargetFPS : 60;
+    self.mtkView.preferredFramesPerSecond = initialFPS;
     
     // Add keyboard notifications
     [[NSNotificationCenter defaultCenter] addObserver:self

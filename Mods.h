@@ -124,7 +124,12 @@ struct Mods {
     bool SoundEffects = true;     // Âm thanh phản hồi khi bật tắt
     bool GestureShortcut = true;  // Cử chỉ chạm 3 ngón tay mở menu
     bool ShowFloatingIcon = true; // Hiển thị nút nổi icon mở menu
-    int ThemePreset = 0;          // 0: Dark, 1: Neon Cyan, 2: Racing Red, 3: Neon Purple, 4: Emerald Green
+    int ThemePreset = 0;          // 0: Dark, 1: Neon Cyan, 2: Racing Red, 3: Neon Purple, 4: Emerald Green, 5: Amber Gold, 6: Cyber Sunset / Pink
+    bool UseCustomTheme = false;  // Sử dụng bảng màu RGB tự do
+    float CustomAccentColor[3] = { 0.0f, 0.85f, 1.0f }; // Màu điểm nhấn (Accent RGB)
+    float CustomBgColor[3] = { 0.07f, 0.07f, 0.09f };   // Màu nền menu (Background RGB)
+    int TargetFPS = 60;           // Tần số quét mục tiêu: 30, 60, 90, 120 FPS
+    bool Unlock120FPS = false;    // Mở khóa 120 FPS ProMotion
     float IconSize = 50.0f;       // Kích thước nút mở menu (35 - 75)
     float IconOpacity = 0.7f;     // Độ mờ nút menu (0.2 - 1.0)
 };
@@ -139,6 +144,8 @@ void ResetConfig();
 void TriggerHaptic(int type = 0);
 void PlayBeepSound(int soundId = 1104);
 void ApplyTheme(int preset);
+void ApplyCustomColors(float r, float g, float b, float bgR, float bgG, float bgB);
+void ApplyFPS(int fps);
 void InitAntiReport();
 void RenderHUD();
 void RenderDriftGuide();

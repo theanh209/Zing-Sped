@@ -1,4 +1,5 @@
 #include "CustomWidgets.h"
+#include "../Mods.h"
 #import "../Includes/SCLAlertView/SCLAlertView.h"
 #import "../Includes/Obfuscate.h"
 #define UIColorFromHex(hexColor) [UIColor colorWithRed:((float)((hexColor & 0xFF0000) >> 16))/255.0 green:((float)((hexColor & 0xFF00) >> 8))/255.0 blue:((float)(hexColor & 0xFF))/255.0 alpha:1.0]
@@ -7,6 +8,9 @@
 
 void LightTheme()
 {
+  if (mods.ThemePreset != 0 || mods.UseCustomTheme) {
+    return;
+  }
   int lightBG[3] = { 214, 219, 226 };
   int lightChild[3] = { 230, 234, 238 };
   int lightIconChild[3] = { 248, 252, 255 };

@@ -8,6 +8,7 @@
 
 + (void)showChange:(BOOL)open;
 + (BOOL)isMenuShowing;
++ (void)setTargetFPS:(NSInteger)fps;
 - (void)updateIOWithTouchEvent:(UIEvent *)event;
 
 @property (nonatomic, assign) BOOL isKeyboardVisible;

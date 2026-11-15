@@ -51,13 +51,60 @@ void SetStyles() {
     style->ScrollbarSize = 15;
     style->Colors[ImGuiCol_WindowBg] = ImColor(BGColor[0], BGColor[1], BGColor[2], 255);
     style->Colors[ImGuiCol_FrameBg] = ImColor(IconChildColor[0], IconChildColor[1], IconChildColor[2], 255);
+    style->Colors[ImGuiCol_FrameBgHovered] = ImColor(std::min(255, IconChildColor[0] + 15), std::min(255, IconChildColor[1] + 15), std::min(255, IconChildColor[2] + 15), 255);
+    style->Colors[ImGuiCol_FrameBgActive] = ImColor(std::min(255, IconChildColor[0] + 30), std::min(255, IconChildColor[1] + 30), std::min(255, IconChildColor[2] + 30), 255);
     style->Colors[ImGuiCol_TitleBg] = ImColor(ChildColor[0], ChildColor[1], ChildColor[2], 255);
     style->Colors[ImGuiCol_TitleBgActive] = ImColor(ChildColor[0], ChildColor[1], ChildColor[2], 255);
     style->Colors[ImGuiCol_Header] = ImColor(ChildColor[0], ChildColor[1], ChildColor[2], 255);
+    style->Colors[ImGuiCol_HeaderHovered] = ImColor(GrabColor[0], GrabColor[1], GrabColor[2], 180);
+    style->Colors[ImGuiCol_HeaderActive] = ImColor(GrabColor[0], GrabColor[1], GrabColor[2], 255);
     style->Colors[ImGuiCol_ChildBg] = ImColor(ChildColor[0], ChildColor[1], ChildColor[2], 255);
+    style->Colors[ImGuiCol_Button] = ImColor(IconChildColor[0], IconChildColor[1], IconChildColor[2], 255);
+    style->Colors[ImGuiCol_ButtonHovered] = ImColor(GrabColor[0], GrabColor[1], GrabColor[2], 180);
+    style->Colors[ImGuiCol_ButtonActive] = ImColor(GrabColor[0], GrabColor[1], GrabColor[2], 255);
+    style->Colors[ImGuiCol_CheckMark] = ImColor(ActiveTextColor[0], ActiveTextColor[1], ActiveTextColor[2], 255);
+    style->Colors[ImGuiCol_SliderGrab] = ImColor(GrabColor[0], GrabColor[1], GrabColor[2], 255);
+    style->Colors[ImGuiCol_SliderGrabActive] = ImColor(ActiveTextColor[0], ActiveTextColor[1], ActiveTextColor[2], 255);
+}
+
+void ApplyCustomColors(float r, float g, float b, float bgR, float bgG, float bgB) {
+    mods.UseCustomTheme = true;
+    mods.CustomAccentColor[0] = r;
+    mods.CustomAccentColor[1] = g;
+    mods.CustomAccentColor[2] = b;
+    mods.CustomBgColor[0] = bgR;
+    mods.CustomBgColor[1] = bgG;
+    mods.CustomBgColor[2] = bgB;
+
+    BGColor[0] = (int)(bgR * 255.0f);
+    BGColor[1] = (int)(bgG * 255.0f);
+    BGColor[2] = (int)(bgB * 255.0f);
+
+    ChildColor[0] = std::min(255, (int)(bgR * 255.0f + 12));
+    ChildColor[1] = std::min(255, (int)(bgG * 255.0f + 12));
+    ChildColor[2] = std::min(255, (int)(bgB * 255.0f + 16));
+
+    IconChildColor[0] = std::min(255, (int)(bgR * 255.0f + 20));
+    IconChildColor[1] = std::min(255, (int)(bgG * 255.0f + 22));
+    IconChildColor[2] = std::min(255, (int)(bgB * 255.0f + 28));
+
+    ActiveTextColor[0] = (int)(r * 255.0f);
+    ActiveTextColor[1] = (int)(g * 255.0f);
+    ActiveTextColor[2] = (int)(b * 255.0f);
+
+    GrabColor[0] = (int)(r * 220.0f);
+    GrabColor[1] = (int)(g * 220.0f);
+    GrabColor[2] = (int)(b * 220.0f);
+
+    InactiveTextColor[0] = std::min(255, (int)(r * 100.0f + 60));
+    InactiveTextColor[1] = std::min(255, (int)(g * 100.0f + 60));
+    InactiveTextColor[2] = std::min(255, (int)(b * 100.0f + 60));
+
+    SetStyles();
 }
 
 void ApplyTheme(int preset) {
+    mods.UseCustomTheme = false;
     mods.ThemePreset = preset;
     if (preset == 0) { // Dark Classic
         BGColor[0] = 17; BGColor[1] = 17; BGColor[2] = 19;
@@ -94,6 +141,20 @@ void ApplyTheme(int preset) {
         InactiveTextColor[0] = 85; InactiveTextColor[1] = 135; InactiveTextColor[2] = 110;
         ActiveTextColor[0] = 50; ActiveTextColor[1] = 240; ActiveTextColor[2] = 150;
         GrabColor[0] = 35; GrabColor[1] = 190; GrabColor[2] = 115;
+    } else if (preset == 5) { // Amber Gold (Hoàng Gia)
+        BGColor[0] = 22; BGColor[1] = 18; BGColor[2] = 12;
+        ChildColor[0] = 30; ChildColor[1] = 24; ChildColor[2] = 16;
+        IconChildColor[0] = 45; IconChildColor[1] = 36; IconChildColor[2] = 22;
+        InactiveTextColor[0] = 140; InactiveTextColor[1] = 115; InactiveTextColor[2] = 70;
+        ActiveTextColor[0] = 255; ActiveTextColor[1] = 200; ActiveTextColor[2] = 50;
+        GrabColor[0] = 230; GrabColor[1] = 170; GrabColor[2] = 30;
+    } else if (preset == 6) { // Cyber Sunset / Sakura Pink
+        BGColor[0] = 24; BGColor[1] = 14; BGColor[2] = 22;
+        ChildColor[0] = 34; ChildColor[1] = 18; ChildColor[2] = 30;
+        IconChildColor[0] = 50; IconChildColor[1] = 24; IconChildColor[2] = 44;
+        InactiveTextColor[0] = 140; InactiveTextColor[1] = 85; InactiveTextColor[2] = 125;
+        ActiveTextColor[0] = 255; ActiveTextColor[1] = 105; ActiveTextColor[2] = 180;
+        GrabColor[0] = 240; GrabColor[1] = 75; GrabColor[2] = 160;
     }
     SetStyles();
 }
@@ -868,17 +929,114 @@ void LoadMenu() {
             ImGui::Separator();
             ImGui::Spacing();
 
-            // 4. BỘ CHỌN THEME PRESETS
-            ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), ICON_FA_PALETTE "  Giao dien Theme:");
-            if (ImGui::RadioButton("Dark", mods.ThemePreset == 0)) { TriggerHaptic(0); ApplyTheme(0); }
+            // 4. BỘ CHỌN THEME PRESETS & TÙY CHỈNH MÀU SẮC MENU
+            ImGui::TextColored(ImVec4(0.4f, 0.85f, 1.0f, 1.0f), ICON_FA_PALETTE "  Mau Sac Menu & Giao Dien:");
+            if (ImGui::RadioButton("Dark", mods.ThemePreset == 0 && !mods.UseCustomTheme)) { TriggerHaptic(0); ApplyTheme(0); SaveConfig(); }
             ImGui::SameLine();
-            if (ImGui::RadioButton("Cyan", mods.ThemePreset == 1)) { TriggerHaptic(0); ApplyTheme(1); }
+            if (ImGui::RadioButton("Cyan", mods.ThemePreset == 1 && !mods.UseCustomTheme)) { TriggerHaptic(0); ApplyTheme(1); SaveConfig(); }
             ImGui::SameLine();
-            if (ImGui::RadioButton("Red", mods.ThemePreset == 2)) { TriggerHaptic(0); ApplyTheme(2); }
+            if (ImGui::RadioButton("Red", mods.ThemePreset == 2 && !mods.UseCustomTheme)) { TriggerHaptic(0); ApplyTheme(2); SaveConfig(); }
             ImGui::SameLine();
-            if (ImGui::RadioButton("Purple", mods.ThemePreset == 3)) { TriggerHaptic(0); ApplyTheme(3); }
+            if (ImGui::RadioButton("Purple", mods.ThemePreset == 3 && !mods.UseCustomTheme)) { TriggerHaptic(0); ApplyTheme(3); SaveConfig(); }
+            
+            if (ImGui::RadioButton("Green", mods.ThemePreset == 4 && !mods.UseCustomTheme)) { TriggerHaptic(0); ApplyTheme(4); SaveConfig(); }
             ImGui::SameLine();
-            if (ImGui::RadioButton("Green", mods.ThemePreset == 4)) { TriggerHaptic(0); ApplyTheme(4); }
+            if (ImGui::RadioButton("Gold", mods.ThemePreset == 5 && !mods.UseCustomTheme)) { TriggerHaptic(0); ApplyTheme(5); SaveConfig(); }
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Pink", mods.ThemePreset == 6 && !mods.UseCustomTheme)) { TriggerHaptic(0); ApplyTheme(6); SaveConfig(); }
+
+            // Chế độ Tự Chọn Màu Riêng (Custom RGB Theme)
+            ImGui::Spacing();
+            if (ImGui::Checkbox(ICON_FA_SLIDERS_H "  Tu Chon Mau Rieng (Custom RGB)", &mods.UseCustomTheme)) {
+                TriggerHaptic(0);
+                if (mods.UseCustomTheme) {
+                    ApplyCustomColors(mods.CustomAccentColor[0], mods.CustomAccentColor[1], mods.CustomAccentColor[2],
+                                      mods.CustomBgColor[0], mods.CustomBgColor[1], mods.CustomBgColor[2]);
+                } else {
+                    ApplyTheme(mods.ThemePreset);
+                }
+                SaveConfig();
+            }
+
+            if (mods.UseCustomTheme) {
+                ImGui::Indent(8.0f);
+                ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.3f, 1.0f), "Tuy chinh chi tiet bang mau RGB:");
+                
+                bool colorChanged = false;
+                if (ImGui::ColorEdit3("Mau Diem Nhan (Accent)", mods.CustomAccentColor, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_PickerHueWheel)) {
+                    colorChanged = true;
+                }
+                if (ImGui::ColorEdit3("Mau Nen (Background)", mods.CustomBgColor, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_PickerHueWheel)) {
+                    colorChanged = true;
+                }
+
+                // RGB sliders
+                if (ImGui::SliderFloat("Accent R", &mods.CustomAccentColor[0], 0.0f, 1.0f, "R: %.2f")) colorChanged = true;
+                if (ImGui::SliderFloat("Accent G", &mods.CustomAccentColor[1], 0.0f, 1.0f, "G: %.2f")) colorChanged = true;
+                if (ImGui::SliderFloat("Accent B", &mods.CustomAccentColor[2], 0.0f, 1.0f, "B: %.2f")) colorChanged = true;
+                if (ImGui::SliderFloat("Nen R", &mods.CustomBgColor[0], 0.0f, 0.35f, "Nen R: %.2f")) colorChanged = true;
+                if (ImGui::SliderFloat("Nen G", &mods.CustomBgColor[1], 0.0f, 0.35f, "Nen G: %.2f")) colorChanged = true;
+                if (ImGui::SliderFloat("Nen B", &mods.CustomBgColor[2], 0.0f, 0.35f, "Nen B: %.2f")) colorChanged = true;
+
+                // Palette gợi ý nhanh
+                ImGui::Text("Mau goi y:");
+                if (ImGui::Button("Ice Blue", ImVec2(70, 22))) {
+                    mods.CustomAccentColor[0] = 0.0f; mods.CustomAccentColor[1] = 0.88f; mods.CustomAccentColor[2] = 1.0f;
+                    colorChanged = true;
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Gold", ImVec2(55, 22))) {
+                    mods.CustomAccentColor[0] = 1.0f; mods.CustomAccentColor[1] = 0.78f; mods.CustomAccentColor[2] = 0.15f;
+                    colorChanged = true;
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Pink", ImVec2(55, 22))) {
+                    mods.CustomAccentColor[0] = 1.0f; mods.CustomAccentColor[1] = 0.4f; mods.CustomAccentColor[2] = 0.7f;
+                    colorChanged = true;
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Green", ImVec2(55, 22))) {
+                    mods.CustomAccentColor[0] = 0.15f; mods.CustomAccentColor[1] = 0.95f; mods.CustomAccentColor[2] = 0.5f;
+                    colorChanged = true;
+                }
+
+                if (colorChanged) {
+                    ApplyCustomColors(mods.CustomAccentColor[0], mods.CustomAccentColor[1], mods.CustomAccentColor[2],
+                                      mods.CustomBgColor[0], mods.CustomBgColor[1], mods.CustomBgColor[2]);
+                    SaveConfig();
+                }
+                ImGui::Unindent(8.0f);
+            }
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            // 4.5. TÙY CHỈNH FPS & MỞ KHÓA 120HZ PROMOTION
+            float currentFramerate = ImGui::GetIO().Framerate;
+            float frameTimeMs = 1000.0f / (currentFramerate > 0.0f ? currentFramerate : 60.0f);
+            ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.4f, 1.0f), ICON_FA_TACHOMETER_ALT "  FPS & Tan So Quet (Unity & Menu):");
+            ImGui::Text("Muc tieu: %d FPS | Thuc te: %.1f FPS (%.1f ms)", mods.TargetFPS, currentFramerate, frameTimeMs);
+
+            bool fpsChanged = false;
+            if (ImGui::RadioButton("30 FPS", mods.TargetFPS == 30)) { mods.TargetFPS = 30; fpsChanged = true; }
+            ImGui::SameLine();
+            if (ImGui::RadioButton("60 FPS", mods.TargetFPS == 60)) { mods.TargetFPS = 60; fpsChanged = true; }
+            ImGui::SameLine();
+            if (ImGui::RadioButton("90 FPS", mods.TargetFPS == 90)) { mods.TargetFPS = 90; fpsChanged = true; }
+            ImGui::SameLine();
+            if (ImGui::RadioButton("120 FPS", mods.TargetFPS == 120)) { mods.TargetFPS = 120; fpsChanged = true; }
+
+            if (ImGui::SliderInt("Tuy Chon FPS", &mods.TargetFPS, 30, 120, "%d FPS")) {
+                fpsChanged = true;
+            }
+
+            if (fpsChanged) {
+                TriggerHaptic(0);
+                ApplyFPS(mods.TargetFPS);
+                SaveConfig();
+                Console::logSuccess([[NSString stringWithFormat:@"Da ap dung tan so quet: %d FPS", mods.TargetFPS] UTF8String]);
+            }
 
             ImGui::Spacing();
 
@@ -937,7 +1095,13 @@ void LoadMenu() {
             ImGui::SameLine();
             if (ImGui::Button(ICON_FA_PASTE "  Dan & Ap Dung", ImVec2(ImGui::GetContentRegionAvail().x, 26))) {
                 if (ImportConfigFromClipboard()) {
-                    ApplyTheme(mods.ThemePreset);
+                    if (mods.UseCustomTheme) {
+                        ApplyCustomColors(mods.CustomAccentColor[0], mods.CustomAccentColor[1], mods.CustomAccentColor[2],
+                                          mods.CustomBgColor[0], mods.CustomBgColor[1], mods.CustomBgColor[2]);
+                    } else {
+                        ApplyTheme(mods.ThemePreset);
+                    }
+                    ApplyFPS(mods.TargetFPS);
                     UpdateFloatingIcon(mods.IconSize, mods.IconOpacity);
                     Console::logSuccess("Da nap cau hinh thanh cong tu Clipboard!");
                 } else {
@@ -958,6 +1122,7 @@ void LoadMenu() {
                 TriggerHaptic(1);
                 ResetConfig();
                 ApplyTheme(0);
+                ApplyFPS(60);
                 UpdateFloatingIcon(mods.IconSize, mods.IconOpacity);
                 Console::logWarning("Da khoi phuc cau hinh mac dinh!");
             }
@@ -1166,7 +1331,13 @@ void LoadMenu() {
 static void didFinishLaunching(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef info) {
   timer(5) {
     LoadMods();
-    ApplyTheme(mods.ThemePreset);
+    if (mods.UseCustomTheme) {
+        ApplyCustomColors(mods.CustomAccentColor[0], mods.CustomAccentColor[1], mods.CustomAccentColor[2],
+                          mods.CustomBgColor[0], mods.CustomBgColor[1], mods.CustomBgColor[2]);
+    } else {
+        ApplyTheme(mods.ThemePreset);
+    }
+    ApplyFPS(mods.TargetFPS);
     UpdateFloatingIcon(mods.IconSize, mods.IconOpacity);
     SCLAlertView *alert = [[SCLAlertView alloc] initWithNewWindow];
     alert.customViewColor = [UIColor colorWithRed:0.15 green:0.65 blue:1.0 alpha:1.0];

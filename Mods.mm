@@ -6,6 +6,7 @@
 #include <mach-o/dyld.h>
 #include <mach/mach.h>
 #import <objc/runtime.h>
+#include <dlfcn.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -14,6 +15,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <pthread.h>
+#import "ImGui/ImGuiDrawViewX.h"
 #include "LiveWebRadarHtml.h"
 
 Mods mods;
@@ -217,6 +219,25 @@ static NSURLSessionDataTask* hook_dataTaskWithRequest(id self, SEL _cmd, NSURLRe
     return nil;
 }
 
+void ApplyFPS(int fps) {
+    if (fps < 30) fps = 30;
+    if (fps > 120) fps = 120;
+    mods.TargetFPS = fps;
+
+    // 1. Cập nhật Metal MTKView ImGui
+    [ImGuiDrawViewX setTargetFPS:fps];
+
+    // 2. Can thiệp Unity Game Engine CADisplayLink rate
+    typedef void (*UnitySetTargetFPSFunc)(int);
+    static UnitySetTargetFPSFunc s_unitySetTargetFPS = nullptr;
+    if (!s_unitySetTargetFPS) {
+        s_unitySetTargetFPS = (UnitySetTargetFPSFunc)dlsym(RTLD_DEFAULT, "UnitySetTargetFPS");
+    }
+    if (s_unitySetTargetFPS) {
+        s_unitySetTargetFPS(fps);
+    }
+}
+
 void InitAntiReport() {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
@@ -302,6 +323,15 @@ void SaveConfig() {
     [defaults setInteger:mods.WebRadarPort forKey:@"zst_WebRadarPort"];
     [defaults setBool:mods.CloudRadarEnabled forKey:@"zst_CloudRadarEnabled"];
     [defaults setObject:[NSString stringWithUTF8String:mods.CloudRoomCode] forKey:@"zst_CloudRoomCode"];
+    [defaults setInteger:mods.TargetFPS forKey:@"zst_TargetFPS"];
+    [defaults setBool:mods.Unlock120FPS forKey:@"zst_Unlock120FPS"];
+    [defaults setBool:mods.UseCustomTheme forKey:@"zst_UseCustomTheme"];
+    [defaults setFloat:mods.CustomAccentColor[0] forKey:@"zst_CustomAccentR"];
+    [defaults setFloat:mods.CustomAccentColor[1] forKey:@"zst_CustomAccentG"];
+    [defaults setFloat:mods.CustomAccentColor[2] forKey:@"zst_CustomAccentB"];
+    [defaults setFloat:mods.CustomBgColor[0] forKey:@"zst_CustomBgR"];
+    [defaults setFloat:mods.CustomBgColor[1] forKey:@"zst_CustomBgG"];
+    [defaults setFloat:mods.CustomBgColor[2] forKey:@"zst_CustomBgB"];
     [defaults synchronize];
 }
 
@@ -396,6 +426,27 @@ void LoadConfig() {
                 strncpy(mods.CloudRoomCode, [savedRoom UTF8String], sizeof(mods.CloudRoomCode) - 1);
                 mods.CloudRoomCode[sizeof(mods.CloudRoomCode) - 1] = '\0';
             }
+            if ([defaults objectForKey:@"zst_TargetFPS"] != nil) {
+                mods.TargetFPS = (int)[defaults integerForKey:@"zst_TargetFPS"];
+                if (mods.TargetFPS < 30) mods.TargetFPS = 60;
+                if (mods.TargetFPS > 120) mods.TargetFPS = 120;
+            }
+            if ([defaults objectForKey:@"zst_Unlock120FPS"] != nil) {
+                mods.Unlock120FPS = [defaults boolForKey:@"zst_Unlock120FPS"];
+            }
+            if ([defaults objectForKey:@"zst_UseCustomTheme"] != nil) {
+                mods.UseCustomTheme = [defaults boolForKey:@"zst_UseCustomTheme"];
+            }
+            if ([defaults objectForKey:@"zst_CustomAccentR"] != nil) {
+                mods.CustomAccentColor[0] = [defaults floatForKey:@"zst_CustomAccentR"];
+                mods.CustomAccentColor[1] = [defaults floatForKey:@"zst_CustomAccentG"];
+                mods.CustomAccentColor[2] = [defaults floatForKey:@"zst_CustomAccentB"];
+            }
+            if ([defaults objectForKey:@"zst_CustomBgR"] != nil) {
+                mods.CustomBgColor[0] = [defaults floatForKey:@"zst_CustomBgR"];
+                mods.CustomBgColor[1] = [defaults floatForKey:@"zst_CustomBgG"];
+                mods.CustomBgColor[2] = [defaults floatForKey:@"zst_CustomBgB"];
+            }
         }
     }
 }
@@ -460,6 +511,15 @@ bool ExportConfigToClipboard() {
     dict[@"WebRadarPort"] = @(mods.WebRadarPort);
     dict[@"CloudRadarEnabled"] = @(mods.CloudRadarEnabled);
     dict[@"CloudRoomCode"] = [NSString stringWithUTF8String:mods.CloudRoomCode];
+    dict[@"TargetFPS"] = @(mods.TargetFPS);
+    dict[@"Unlock120FPS"] = @(mods.Unlock120FPS);
+    dict[@"UseCustomTheme"] = @(mods.UseCustomTheme);
+    dict[@"CustomAccentR"] = @(mods.CustomAccentColor[0]);
+    dict[@"CustomAccentG"] = @(mods.CustomAccentColor[1]);
+    dict[@"CustomAccentB"] = @(mods.CustomAccentColor[2]);
+    dict[@"CustomBgR"] = @(mods.CustomBgColor[0]);
+    dict[@"CustomBgG"] = @(mods.CustomBgColor[1]);
+    dict[@"CustomBgB"] = @(mods.CustomBgColor[2]);
 
     NSError *err = nil;
     NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict options:0 error:&err];
@@ -552,6 +612,18 @@ bool ImportConfigFromClipboard() {
             mods.CloudRoomCode[sizeof(mods.CloudRoomCode) - 1] = '\0';
         }
     }
+    if (dict[@"TargetFPS"]) {
+        mods.TargetFPS = [dict[@"TargetFPS"] intValue];
+        ApplyFPS(mods.TargetFPS);
+    }
+    if (dict[@"Unlock120FPS"]) mods.Unlock120FPS = [dict[@"Unlock120FPS"] boolValue];
+    if (dict[@"UseCustomTheme"]) mods.UseCustomTheme = [dict[@"UseCustomTheme"] boolValue];
+    if (dict[@"CustomAccentR"]) mods.CustomAccentColor[0] = [dict[@"CustomAccentR"] floatValue];
+    if (dict[@"CustomAccentG"]) mods.CustomAccentColor[1] = [dict[@"CustomAccentG"] floatValue];
+    if (dict[@"CustomAccentB"]) mods.CustomAccentColor[2] = [dict[@"CustomAccentB"] floatValue];
+    if (dict[@"CustomBgR"]) mods.CustomBgColor[0] = [dict[@"CustomBgR"] floatValue];
+    if (dict[@"CustomBgG"]) mods.CustomBgColor[1] = [dict[@"CustomBgG"] floatValue];
+    if (dict[@"CustomBgB"]) mods.CustomBgColor[2] = [dict[@"CustomBgB"] floatValue];
 
     SaveConfig();
     TriggerHaptic(3);
@@ -1088,6 +1160,9 @@ void LoadMods()
 {
     // Tải cấu hình đã lưu
     LoadConfig();
+
+    // Áp dụng tần số quét FPS
+    ApplyFPS(mods.TargetFPS);
 
     // Tự động nạp file Offsets.json trong Documents
     LoadDynamicOffsets();
