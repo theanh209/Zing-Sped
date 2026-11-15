@@ -1,0 +1,71 @@
+{
+  "_ThongTin": "ZingSpeed Mobile VN v1.55 Offset & Token Mapping",
+  "_TacGia": "Zhee Dev",
+  "_HuongDan": "Dien cac dia chi offset hex 0x (hoac giu nguyen cac token phuong thuc v1.55 de hook truc tiep). Luu file tai Documents/Offsets.json roi vao game bam Reload Offsets.",
+  "MemoryOffsets": {
+    "GWorld": "0x0",
+    "PlayerKart": "0x0",
+    "NitroOffset": "0x0",
+    "SpeedOffset": "0x0",
+    "PositionOffset": "0x0",
+    "CollisionOffset": "0x0"
+  },
+  "ZingSpeed_v1.55_Tokens": {
+    "Vehicle_ECU_Speed": {
+      "Class_NssPhyVehicleECU": "0x020012C7",
+      "SetNormalTopMPS": "0x0600B2C7",
+      "ReadNormalTopMPS": "0x0600B2C6",
+      "SetEngineTorque": "0x0600B2C9",
+      "ReadEngineTorque": "0x0600B2C8",
+      "SetForceTopMPS": "0x0600B2CA",
+      "ToggleDrifting": "0x0600B2C4",
+      "ReleaseDrifting": "0x0600B2C5",
+      "IsSidewaysDrift": "0x0600B2BE",
+      "IsSwingTailDrift": "0x0600B2BF",
+      "IsDriftSliding": "0x0600B2C2",
+      "GetEnterSlidingDriftVDAngle": "0x0600B2C1"
+    },
+    "Drift_Controller": {
+      "Class_NssVehicleDriftCtrl": "0x02001297",
+      "EnterDelayFastOutCornersState": "0x0600AF34",
+      "DoFastOutCorners": "0x0600AF35",
+      "AddDriftingExLinAcc": "0x0600AF37",
+      "AddDriftingExLinDecScaleCoef": "0x0600AF3A",
+      "get_DriftState": "0x0600AF3D",
+      "get_ToggleDriftingSteering": "0x0600AF3F",
+      "get_LinVelBeforeDrift": "0x0600AF40"
+    },
+    "Driving_Steering_Throttle": {
+      "Class_NssPhyVehicleDrivingCtrl": "0x020012B1",
+      "get_Steering": "0x0600B1ED",
+      "set_Steering": "0x0600B1EE",
+      "get_Throttle": "0x0600B1EB",
+      "set_Throttle": "0x0600B1EC",
+      "SetHandBrakeState": "0x0600B1F5",
+      "LockThrottle": "0x0600B1E7"
+    },
+    "Nitrogen_Collect_Boost": {
+      "Class_SingleNitrogenCollect": "0x02005341",
+      "get_NitrogenValue": "0x06033E2F",
+      "get_ProgressBarPowerValue": "0x06033E2B",
+      "get_CurIsCollect": "0x06033E27",
+      "set_ForceInCollectState": "0x06033E29",
+      "EnableDriftNitrogenCollect": "0x06033E38",
+      "Class_ECUEnergyCollect": "0x0200533C",
+      "get_CurEnergyValue": "0x06033678",
+      "set_CurEnergyValue": "0x06033679",
+      "get_MaxEnergyValue": "0x06033674",
+      "set_MaxEnergyValue": "0x06033675"
+    },
+    "Vehicle_Motion_Position": {
+      "Class_IVehicleMotion": "0x020013AC",
+      "get_Position": "0x0600B978",
+      "get_Rotation": "0x0600B979",
+      "get_LinVel": "0x0600B97A",
+      "get_AngVel": "0x0600B97B",
+      "get_VDAngle": "0x0600B97D",
+      "get_DriftExpMPS": "0x0600B97E",
+      "get_SteeringTorque": "0x0600B980"
+    }
+  }
+}

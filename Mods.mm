@@ -149,6 +149,15 @@ void LoadDynamicOffsets() {
         NSError *err = nil;
         NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&err];
         if (!err && json && [json isKindOfClass:[NSDictionary class]]) {
+            NSDictionary *memOffsets = json[@"MemoryOffsets"];
+            if (memOffsets && [memOffsets isKindOfClass:[NSDictionary class]]) {
+                if (memOffsets[@"GWorld"]) gameOffsets.GWorld = ParseHex(memOffsets[@"GWorld"]);
+                if (memOffsets[@"PlayerKart"]) gameOffsets.PlayerKart = ParseHex(memOffsets[@"PlayerKart"]);
+                if (memOffsets[@"NitroOffset"]) gameOffsets.NitroOffset = ParseHex(memOffsets[@"NitroOffset"]);
+                if (memOffsets[@"SpeedOffset"]) gameOffsets.SpeedOffset = ParseHex(memOffsets[@"SpeedOffset"]);
+                if (memOffsets[@"PositionOffset"]) gameOffsets.PositionOffset = ParseHex(memOffsets[@"PositionOffset"]);
+                if (memOffsets[@"CollisionOffset"]) gameOffsets.CollisionOffset = ParseHex(memOffsets[@"CollisionOffset"]);
+            }
             if (json[@"GWorld"]) gameOffsets.GWorld = ParseHex(json[@"GWorld"]);
             if (json[@"PlayerKart"]) gameOffsets.PlayerKart = ParseHex(json[@"PlayerKart"]);
             if (json[@"NitroOffset"]) gameOffsets.NitroOffset = ParseHex(json[@"NitroOffset"]);

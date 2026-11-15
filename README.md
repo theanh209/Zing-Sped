@@ -83,26 +83,60 @@
 
 ---
 
-## 📄 Hướng dẫn sử dụng file cấu hình `Offsets.json`
+## 📄 Hướng dẫn sử dụng file cấu hình `Offsets.json` (ZingSpeed v1.55)
 
-Khi cài đặt và mở game lần đầu, tweak sẽ tự tạo file mẫu tại:  
-`/var/mobile/Containers/Data/Application/<ZingSpeedMobile>/Documents/Offsets.json`
+Tweak tích hợp sẵn file [`Offsets.json`](Offsets.json) chứa toàn bộ token phương thức và cấu trúc bộ nhớ chuẩn của **ZingSpeed Mobile v1.55**:
+- **Đường dẫn trên iPhone:** `/var/mobile/Containers/Data/Application/<ZingSpeedMobile>/Documents/Offsets.json`
 
-Nội dung file JSON:
+Cấu trúc file `Offsets.json`:
 ```json
 {
-  "_HuongDan": "Dien cac dia chi offset hex 0x vao day. Luu file roi vao game bam Reload Offsets.",
-  "GWorld": "0x0",
-  "PlayerKart": "0x0",
-  "NitroOffset": "0x0",
-  "SpeedOffset": "0x0",
-  "PositionOffset": "0x0",
-  "CollisionOffset": "0x0"
+  "_ThongTin": "ZingSpeed Mobile VN v1.55 Offset & Token Mapping",
+  "MemoryOffsets": {
+    "GWorld": "0x0",
+    "PlayerKart": "0x0",
+    "NitroOffset": "0x0",
+    "SpeedOffset": "0x0",
+    "PositionOffset": "0x0",
+    "CollisionOffset": "0x0"
+  },
+  "ZingSpeed_v1.55_Tokens": {
+    "Vehicle_ECU_Speed": {
+      "Class_NssPhyVehicleECU": "0x020012C7",
+      "SetNormalTopMPS": "0x0600B2C7",
+      "ReadNormalTopMPS": "0x0600B2C6",
+      "SetEngineTorque": "0x0600B2C9",
+      "ToggleDrifting": "0x0600B2C4",
+      "ReleaseDrifting": "0x0600B2C5"
+    },
+    "Drift_Controller": {
+      "Class_NssVehicleDriftCtrl": "0x02001297",
+      "DoFastOutCorners": "0x0600AF35",
+      "AddDriftingExLinAcc": "0x0600AF37",
+      "AddDriftingExLinDecScaleCoef": "0x0600AF3A"
+    },
+    "Driving_Steering_Throttle": {
+      "Class_NssPhyVehicleDrivingCtrl": "0x020012B1",
+      "set_Steering": "0x0600B1EE",
+      "set_Throttle": "0x0600B1EC",
+      "SetHandBrakeState": "0x0600B1F5"
+    },
+    "Nitrogen_Collect_Boost": {
+      "Class_SingleNitrogenCollect": "0x02005341",
+      "get_NitrogenValue": "0x06033E2F",
+      "get_ProgressBarPowerValue": "0x06033E2B",
+      "Class_ECUEnergyCollect": "0x0200533C",
+      "get_CurEnergyValue": "0x06033678"
+    },
+    "Vehicle_Motion_Position": {
+      "Class_IVehicleMotion": "0x020013AC",
+      "get_Position": "0x0600B978",
+      "get_LinVel": "0x0600B97A",
+      "get_VDAngle": "0x0600B97D"
+    }
+  }
 }
 ```
-Khi bạn có offset mới:
-1. Mở file `Offsets.json` bằng Filza hoặc trình soạn thảo text bất kỳ.
-2. Điền địa chỉ hex (ví dụ: `"NitroOffset": "0x54"`).
 3. Vào game, mở Menu -> **Tab Tiện Ích** -> Bấm **Tải Lại Offsets.json**. Tweak sẽ cập nhật ngay lập tức!
 
 ---

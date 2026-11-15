@@ -44,6 +44,8 @@ jobs:
           find extracted -name "*.dylib" -exec cp {} output/dylib/ \;
           find extracted -name "*.plist" -exec cp {} output/dylib/ \;
           cp Includes/Libs/libdobby_fixed.a output/dylib/ || true
+          cp Offsets.json output/dylib/ || true
+          cp Offsets.json output/ || true
           ls -la output/
           ls -la output/dylib/
 
