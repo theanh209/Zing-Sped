@@ -123,6 +123,7 @@ struct Mods {
     bool HapticFeedback = true;    // Rung phản hồi iPhone
     bool SoundEffects = true;     // Âm thanh phản hồi khi bật tắt
     bool GestureShortcut = true;  // Cử chỉ chạm 3 ngón tay mở menu
+    bool ShowFloatingIcon = true; // Hiển thị nút nổi icon mở menu
     int ThemePreset = 0;          // 0: Dark, 1: Neon Cyan, 2: Racing Red, 3: Neon Purple, 4: Emerald Green
     float IconSize = 50.0f;       // Kích thước nút mở menu (35 - 75)
     float IconOpacity = 0.7f;     // Độ mờ nút menu (0.2 - 1.0)

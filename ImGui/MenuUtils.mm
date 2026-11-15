@@ -128,8 +128,13 @@ bool isOpened = false;
     VisibleMenuButton.center = initialCenter;
     VisibleMenuButton.backgroundColor = [UIColor clearColor];
     VisibleMenuButton.layer.cornerRadius = VisibleMenuButton.frame.size.width * 0.5f;
+    VisibleMenuButton.layer.masksToBounds = YES;
+    VisibleMenuButton.layer.borderWidth = 2.0f;
+    VisibleMenuButton.layer.borderColor = [UIColor colorWithRed:0.2f green:0.85f blue:1.0f alpha:0.85f].CGColor;
     [VisibleMenuButton setBackgroundImage:menuIconImage forState:UIControlStateNormal];
-    VisibleMenuButton.layer.opacity = 0.7;
+    VisibleMenuButton.layer.opacity = mods.IconOpacity > 0.1f ? mods.IconOpacity : 0.7f;
+    VisibleMenuButton.hidden = !mods.ShowFloatingIcon;
+    InvisibleMenuButton.hidden = !mods.ShowFloatingIcon;
     [hideRecordView addSubview:VisibleMenuButton];
 
     // Cử chỉ chạm 3 ngón tay để bật/tắt Menu nhanh chóng
@@ -210,10 +215,13 @@ void UpdateFloatingIcon(float size, float opacity) {
             VisibleMenuButton.frame = CGRectMake(0, 0, size, size);
             VisibleMenuButton.center = center;
             VisibleMenuButton.layer.cornerRadius = size * 0.5f;
+            VisibleMenuButton.layer.masksToBounds = YES;
             VisibleMenuButton.layer.opacity = opacity;
+            VisibleMenuButton.hidden = !mods.ShowFloatingIcon;
 
             InvisibleMenuButton.frame = CGRectMake(0, 0, size, size);
             InvisibleMenuButton.center = center;
+            InvisibleMenuButton.hidden = !mods.ShowFloatingIcon;
         });
     }
 }

@@ -297,6 +297,7 @@ void SaveConfig() {
     [defaults setFloat:mods.ApexMargin forKey:@"zst_ApexMargin"];
     [defaults setFloat:mods.IconSize forKey:@"zst_IconSize"];
     [defaults setFloat:mods.IconOpacity forKey:@"zst_IconOpacity"];
+    [defaults setBool:mods.ShowFloatingIcon forKey:@"zst_ShowFloatingIcon"];
     [defaults setBool:mods.WebRadarEnabled forKey:@"zst_WebRadarEnabled"];
     [defaults setInteger:mods.WebRadarPort forKey:@"zst_WebRadarPort"];
     [defaults setBool:mods.CloudRadarEnabled forKey:@"zst_CloudRadarEnabled"];
@@ -379,6 +380,9 @@ void LoadConfig() {
             mods.IconOpacity = [defaults floatForKey:@"zst_IconOpacity"];
             if (mods.IconSize < 30.0f) mods.IconSize = 50.0f;
             if (mods.IconOpacity < 0.1f) mods.IconOpacity = 0.7f;
+            if ([defaults objectForKey:@"zst_ShowFloatingIcon"] != nil) {
+                mods.ShowFloatingIcon = [defaults boolForKey:@"zst_ShowFloatingIcon"];
+            }
             if ([defaults objectForKey:@"zst_WebRadarEnabled"] != nil) {
                 mods.WebRadarEnabled = [defaults boolForKey:@"zst_WebRadarEnabled"];
                 mods.WebRadarPort = (int)[defaults integerForKey:@"zst_WebRadarPort"];
@@ -451,6 +455,7 @@ bool ExportConfigToClipboard() {
     dict[@"ThemePreset"] = @(mods.ThemePreset);
     dict[@"IconSize"] = @(mods.IconSize);
     dict[@"IconOpacity"] = @(mods.IconOpacity);
+    dict[@"ShowFloatingIcon"] = @(mods.ShowFloatingIcon);
     dict[@"WebRadarEnabled"] = @(mods.WebRadarEnabled);
     dict[@"WebRadarPort"] = @(mods.WebRadarPort);
     dict[@"CloudRadarEnabled"] = @(mods.CloudRadarEnabled);
@@ -536,6 +541,7 @@ bool ImportConfigFromClipboard() {
     if (dict[@"ThemePreset"]) mods.ThemePreset = [dict[@"ThemePreset"] intValue];
     if (dict[@"IconSize"]) mods.IconSize = [dict[@"IconSize"] floatValue];
     if (dict[@"IconOpacity"]) mods.IconOpacity = [dict[@"IconOpacity"] floatValue];
+    if (dict[@"ShowFloatingIcon"]) mods.ShowFloatingIcon = [dict[@"ShowFloatingIcon"] boolValue];
     if (dict[@"WebRadarEnabled"]) mods.WebRadarEnabled = [dict[@"WebRadarEnabled"] boolValue];
     if (dict[@"WebRadarPort"]) mods.WebRadarPort = [dict[@"WebRadarPort"] intValue];
     if (dict[@"CloudRadarEnabled"]) mods.CloudRadarEnabled = [dict[@"CloudRadarEnabled"] boolValue];
