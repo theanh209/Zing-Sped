@@ -299,6 +299,8 @@ void SaveConfig() {
     [defaults setFloat:mods.IconOpacity forKey:@"zst_IconOpacity"];
     [defaults setBool:mods.WebRadarEnabled forKey:@"zst_WebRadarEnabled"];
     [defaults setInteger:mods.WebRadarPort forKey:@"zst_WebRadarPort"];
+    [defaults setBool:mods.CloudRadarEnabled forKey:@"zst_CloudRadarEnabled"];
+    [defaults setObject:[NSString stringWithUTF8String:mods.CloudRoomCode] forKey:@"zst_CloudRoomCode"];
     [defaults synchronize];
 }
 
@@ -382,6 +384,14 @@ void LoadConfig() {
                 mods.WebRadarPort = (int)[defaults integerForKey:@"zst_WebRadarPort"];
                 if (mods.WebRadarPort <= 0) mods.WebRadarPort = 8088;
             }
+            if ([defaults objectForKey:@"zst_CloudRadarEnabled"] != nil) {
+                mods.CloudRadarEnabled = [defaults boolForKey:@"zst_CloudRadarEnabled"];
+            }
+            NSString *savedRoom = [defaults stringForKey:@"zst_CloudRoomCode"];
+            if (savedRoom && savedRoom.length == 5) {
+                strncpy(mods.CloudRoomCode, [savedRoom UTF8String], sizeof(mods.CloudRoomCode) - 1);
+                mods.CloudRoomCode[sizeof(mods.CloudRoomCode) - 1] = '\0';
+            }
         }
     }
 }
@@ -443,6 +453,8 @@ bool ExportConfigToClipboard() {
     dict[@"IconOpacity"] = @(mods.IconOpacity);
     dict[@"WebRadarEnabled"] = @(mods.WebRadarEnabled);
     dict[@"WebRadarPort"] = @(mods.WebRadarPort);
+    dict[@"CloudRadarEnabled"] = @(mods.CloudRadarEnabled);
+    dict[@"CloudRoomCode"] = [NSString stringWithUTF8String:mods.CloudRoomCode];
 
     NSError *err = nil;
     NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict options:0 error:&err];
@@ -526,6 +538,14 @@ bool ImportConfigFromClipboard() {
     if (dict[@"IconOpacity"]) mods.IconOpacity = [dict[@"IconOpacity"] floatValue];
     if (dict[@"WebRadarEnabled"]) mods.WebRadarEnabled = [dict[@"WebRadarEnabled"] boolValue];
     if (dict[@"WebRadarPort"]) mods.WebRadarPort = [dict[@"WebRadarPort"] intValue];
+    if (dict[@"CloudRadarEnabled"]) mods.CloudRadarEnabled = [dict[@"CloudRadarEnabled"] boolValue];
+    if (dict[@"CloudRoomCode"]) {
+        NSString *code = dict[@"CloudRoomCode"];
+        if (code && code.length == 5) {
+            strncpy(mods.CloudRoomCode, [code UTF8String], sizeof(mods.CloudRoomCode) - 1);
+            mods.CloudRoomCode[sizeof(mods.CloudRoomCode) - 1] = '\0';
+        }
+    }
 
     SaveConfig();
     TriggerHaptic(3);
@@ -986,6 +1006,75 @@ void StopWebRadarServer() {
     }
 }
 
+void GenerateNewCloudRoomCode() {
+    const char charset[] = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    for (int i = 0; i < 5; ++i) {
+        mods.CloudRoomCode[i] = charset[arc4random_uniform(sizeof(charset) - 1)];
+    }
+    mods.CloudRoomCode[5] = '\0';
+}
+
+NSString* GetCloudRadarURL() {
+    if (strlen(mods.CloudRoomCode) != 5) {
+        strcpy(mods.CloudRoomCode, "ZSMOD");
+    }
+    return [NSString stringWithFormat:@"https://zingspeedvnmod.vercel.app/map/%s", mods.CloudRoomCode];
+}
+
+void PushTelemetryToCloud() {
+    if (!mods.CloudRadarEnabled) return;
+    static NSTimeInterval lastCloudPush = 0;
+    NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
+    if (now - lastCloudPush < 0.045) return; // ~22 FPS tối ưu băng thông
+    lastCloudPush = now;
+
+    int mapIdx = (mods.SelectedMapIndex >= 0 && mods.SelectedMapIndex < 6) ? mods.SelectedMapIndex : 0;
+    float currentSpeed = mods.GiaToc ? mods.GiaTocSpeed : 225.0f;
+    float driftVal = mods.LockMinDriftAngle ? mods.MinDriftAngleVal : 0.0f;
+    float nitroVal = mods.VoHanNitro ? 100.0f : 85.0f;
+    float px = g_playerPos.x;
+    float pz = g_playerPos.z;
+    float pyaw = g_playerYaw;
+    int currentWp = g_currentWaypointIndex + 1;
+    int totalWp = g_totalWaypoints > 0 ? g_totalWaypoints : 12;
+
+    NSDictionary *dataDict = @{
+        @"ip": GetLocalIPAddress(),
+        @"mapIdx": @(mapIdx),
+        @"x": @(px),
+        @"z": @(pz),
+        @"yaw": @(pyaw),
+        @"speed": @(currentSpeed),
+        @"driftAngle": @(driftVal),
+        @"nitro": @(nitroVal),
+        @"wp": @(currentWp),
+        @"totalWp": @(totalWp),
+        @"opponents": @[
+            @{ @"name": @"Top 2 - Phantom", @"x": @(px - 30.0f * sinf((pyaw + 180.0f) * 0.01745f)), @"y": @(pz - 30.0f * cosf((pyaw + 180.0f) * 0.01745f)), @"yaw": @(pyaw), @"color": @"#ef4444" },
+            @{ @"name": @"Top 3 - Shadow", @"x": @(px - 65.0f * sinf((pyaw + 180.0f) * 0.01745f)), @"y": @(pz - 65.0f * cosf((pyaw + 180.0f) * 0.01745f)), @"yaw": @(pyaw), @"color": @"#a855f7" },
+            @{ @"name": @"Top 4 - Striker", @"x": @(px - 105.0f * sinf((pyaw + 180.0f) * 0.01745f)), @"y": @(pz - 105.0f * cosf((pyaw + 180.0f) * 0.01745f)), @"yaw": @(pyaw), @"color": @"#eab308" }
+        ]
+    };
+
+    NSString *roomStr = [NSString stringWithUTF8String:mods.CloudRoomCode];
+    NSDictionary *bodyDict = @{
+        @"room": roomStr,
+        @"data": dataDict
+    };
+
+    NSError *err = nil;
+    NSData *bodyData = [NSJSONSerialization dataWithJSONObject:bodyDict options:0 error:&err];
+    if (bodyData && !err) {
+        NSURL *url = [NSURL URLWithString:@"https://zingspeedvnmod.vercel.app/api/telemetry"];
+        NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:url];
+        req.HTTPMethod = @"POST";
+        req.timeoutInterval = 2.0;
+        [req setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+        req.HTTPBody = bodyData;
+        [[[NSURLSession sharedSession] dataTaskWithRequest:req] resume];
+    }
+}
+
 // ==========================================
 // 7. LUỒNG THI HÀNH CHEATS (BACKGROUND THREAD)
 // ==========================================
@@ -1057,6 +1146,11 @@ void LoadMods()
                     dispatch_async(dispatch_get_main_queue(), ^{
                         [UIApplication sharedApplication].idleTimerDisabled = mods.AntiAFK;
                     });
+                }
+
+                // Đẩy Telemetry lên Cloud Hosting zingspeedvnmod.vercel.app nếu bật
+                if (mods.CloudRadarEnabled) {
+                    PushTelemetryToCloud();
                 }
 
                 [NSThread sleepForTimeInterval:0.016]; // Ngủ 16ms (60fps)

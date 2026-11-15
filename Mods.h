@@ -116,6 +116,8 @@ struct Mods {
     bool BlockAnalytics = true;    // Chặn telemetry / crashlytics
     bool WebRadarEnabled = false; // Chia sẻ Live Radar lên trình duyệt máy tính
     int WebRadarPort = 8088;      // Cổng Web Server Radar (mặc định 8088)
+    bool CloudRadarEnabled = false; // Chia sẻ Live Radar qua Cloud Hosting (zingspeedvnmod.vercel.app)
+    char CloudRoomCode[16] = "ZSMOD"; // Mã phòng 5 chữ cái viết hoa (VD: ZSMOD, SPEED)
 
     // Tùy biến Menu & Hệ thống (Tab 4)
     bool HapticFeedback = true;    // Rung phản hồi iPhone
@@ -149,6 +151,9 @@ void ResetMatchTimer();
 void StartWebRadarServer();
 void StopWebRadarServer();
 NSString* GetWebRadarURL();
+void GenerateNewCloudRoomCode();
+NSString* GetCloudRadarURL();
+void PushTelemetryToCloud();
 
 struct Vector2D {
     float x;

@@ -730,38 +730,80 @@ void LoadMenu() {
             ImGui::Separator();
             ImGui::Spacing();
 
-            // THẺ CHIA SẺ LIVE RADAR LÊN MÁY TÍNH (WEB RADAR SERVER)
-            ImGui::TextColored(ImVec4(0.0f, 0.95f, 1.0f, 1.0f), ICON_FA_DESKTOP " Web Radar Server (Truyen Hinh Live PC):");
-            newChildVisible = childVisibilityMap["Bat Web Radar Server"];
+            // THẺ CHIA SẺ LIVE RADAR LÊN MÁY TÍNH (CLOUD VERCEL & LOCAL SERVER)
+            ImGui::TextColored(ImVec4(0.0f, 0.95f, 1.0f, 1.0f), ICON_FA_GLOBE " Cloud Web Radar (zingspeedvnmod.vercel.app):");
+            
+            // 1. Chia sẻ qua Cloud Hosting Vercel
+            newChildVisible = childVisibilityMap["Chia Se Cloud Vercel"];
+            bool prevCloudRadar = mods.CloudRadarEnabled;
+            ToggleWidget(ICON_FA_CLOUD, "Chia Se Cloud Vercel", &mods.CloudRadarEnabled, &newChildVisible);
+            childVisibilityMap["Chia Se Cloud Vercel"] = newChildVisible;
+
+            if (mods.CloudRadarEnabled != prevCloudRadar) {
+                SaveConfig();
+                if (mods.CloudRadarEnabled) {
+                    Console::logSuccess([[NSString stringWithFormat:@"Da bat Cloud Radar phong: %s", mods.CloudRoomCode] UTF8String]);
+                } else {
+                    Console::logInfo("Da tat Cloud Radar.");
+                }
+            }
+
+            if (mods.CloudRadarEnabled) {
+                NSString* cloudURL = GetCloudRadarURL();
+                ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.4f, 1.0f), "Link PC Cloud: %s", [cloudURL UTF8String]);
+                ImGui::Text("Ma Phong Live: %s (5 Chu Hoa)", mods.CloudRoomCode);
+
+                if (ImGui::Button(ICON_FA_SYNC "  Doi Ma Phong Moi", ImVec2(ImGui::GetContentRegionAvail().x * 0.45f, 26))) {
+                    TriggerHaptic(0);
+                    PlayBeepSound(1057);
+                    GenerateNewCloudRoomCode();
+                    SaveConfig();
+                    Console::logSuccess([[NSString stringWithFormat:@"Ma phong moi: %s", mods.CloudRoomCode] UTF8String]);
+                }
+                ImGui::SameLine();
+                if (ImGui::Button(ICON_FA_COPY "  Sao Chep Link Cloud", ImVec2(ImGui::GetContentRegionAvail().x, 26))) {
+                    TriggerHaptic(0);
+                    PlayBeepSound(1057);
+                    [UIPasteboard generalPasteboard].string = cloudURL;
+                    Console::logSuccess([[NSString stringWithFormat:@"Da sao chep link Cloud Radar: %@", cloudURL] UTF8String]);
+                }
+            } else {
+                ImGui::TextDisabled("Bat Cloud de tao link zingspeedvnmod.vercel.app/map/XXXXX");
+            }
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            // 2. Chia sẻ qua Web Server Cục Bộ (LAN / Wi-Fi)
+            ImGui::TextColored(ImVec4(0.3f, 0.8f, 1.0f, 1.0f), ICON_FA_WIFI " Web Server Cuc Bo (Wi-Fi / Hotspot):");
+            newChildVisible = childVisibilityMap["Bat Server Cuc Bo"];
             bool prevWebRadar = mods.WebRadarEnabled;
-            ToggleWidget(ICON_FA_WIFI, "Bat Web Radar Server", &mods.WebRadarEnabled, &newChildVisible);
-            childVisibilityMap["Bat Web Radar Server"] = newChildVisible;
+            ToggleWidget(ICON_FA_SERVER, "Bat Server Cuc Bo", &mods.WebRadarEnabled, &newChildVisible);
+            childVisibilityMap["Bat Server Cuc Bo"] = newChildVisible;
 
             if (mods.WebRadarEnabled != prevWebRadar) {
                 if (mods.WebRadarEnabled) {
                     StartWebRadarServer();
                     SaveConfig();
-                    Console::logSuccess([[NSString stringWithFormat:@"Web Radar Server khoi dong tai: %@", GetWebRadarURL()] UTF8String]);
+                    Console::logSuccess([[NSString stringWithFormat:@"Server cuc bo: %@", GetWebRadarURL()] UTF8String]);
                 } else {
                     StopWebRadarServer();
                     SaveConfig();
-                    Console::logInfo("Da tat Web Radar Server.");
+                    Console::logInfo("Da tat Server cuc bo.");
                 }
             }
 
             if (mods.WebRadarEnabled) {
                 NSString* currentURL = GetWebRadarURL();
-                ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.4f, 1.0f), "Link Xem PC: %s", [currentURL UTF8String]);
-                ImGui::TextDisabled("Nhap link tren vao trinh duyet PC de xem radar 60 FPS");
+                ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.4f, 1.0f), "Link Xem PC (LAN): %s", [currentURL UTF8String]);
 
-                if (ImGui::Button(ICON_FA_COPY "  Sao Chep Link May Tinh (URL)", ImVec2(ImGui::GetContentRegionAvail().x, 28))) {
+                if (ImGui::Button(ICON_FA_COPY "  Sao Chep Link LAN", ImVec2(ImGui::GetContentRegionAvail().x, 26))) {
                     TriggerHaptic(0);
                     PlayBeepSound(1057);
                     [UIPasteboard generalPasteboard].string = currentURL;
-                    Console::logSuccess([[NSString stringWithFormat:@"Da sao chep link Web Radar: %@", currentURL] UTF8String]);
+                    Console::logSuccess([[NSString stringWithFormat:@"Da sao chep link LAN: %@", currentURL] UTF8String]);
                 }
-            } else {
-                ImGui::TextDisabled("Server dang tat. Bat de tao duong dan xem radar live tren PC.");
             }
         }
         ImGui::EndChild();
