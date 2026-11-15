@@ -53,6 +53,32 @@ extern NSString* baseimage;
 @end
 
 
+// Resolve the active app window through UIWindowScene (iOS 13+), with a safe fallback.
+static UIWindow *ZSTargetWindow(void) {
+    UIApplication *application = UIApplication.sharedApplication;
+    if (@available(iOS 13.0, *)) {
+        for (UIScene *scene in application.connectedScenes) {
+            if (![scene isKindOfClass:[UIWindowScene class]]) continue;
+            UIWindowScene *windowScene = (UIWindowScene *)scene;
+            if (windowScene.activationState != UISceneActivationStateForegroundActive) continue;
+            for (UIWindow *window in windowScene.windows) {
+                if (window.isKeyWindow) return window;
+            }
+            for (UIWindow *window in windowScene.windows) {
+                if (!window.hidden && window.alpha > 0.0) return window;
+            }
+        }
+    }
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    if (application.keyWindow) return application.keyWindow;
+#pragma clang diagnostic pop
+    for (UIWindow *window in application.windows) {
+        if (window.isKeyWindow) return window;
+    }
+    return application.windows.firstObject;
+}
+
 @implementation MenuUtils
 bool isOpened = false;
 
@@ -63,84 +89,108 @@ bool isOpened = false;
 + (void)load
 {
     [super load];
+    // UIKit may not have created the foreground window when +load runs.
     timer(3){
-        extraInfo =  [MenuUtils new];
+        extraInfo = [MenuUtils new];
         [extraInfo initTapGes];
     });
 }
+
 -(void)initTapGes
 {
-    UIView* mainView = [UIApplication sharedApplication].windows[0].rootViewController.view;
-
-    hideRecordTextfield = [[UITextField alloc] init];
-    hideRecordView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height)];
-    [hideRecordView setBackgroundColor:[UIColor clearColor]];
-    [hideRecordView setUserInteractionEnabled:YES];
-    hideRecordTextfield.secureTextEntry = true;
-    [hideRecordView addSubview:hideRecordTextfield];
-    CALayer *layer = hideRecordTextfield.layer;
-    if ([layer.sublayers.firstObject.delegate isKindOfClass:[UIView class]]) {
-        hideRecordView = (UIView *)layer.sublayers.firstObject.delegate;
-    } else {
-        hideRecordView = nil;
+    if (![NSThread isMainThread]) {
+        dispatch_async(dispatch_get_main_queue(), ^{ [self initTapGes]; });
+        return;
     }
 
-    [[UIApplication sharedApplication].keyWindow addSubview:hideRecordView];
+    UIWindow *window = ZSTargetWindow();
+    UIView *mainView = window.rootViewController.view;
+    if (!window || !mainView) {
+        // Retry while the app is transitioning into its first usable scene.
+        timer(1){ [self initTapGes]; });
+        return;
+    }
+
+    // Prevent duplicate overlays if initialization is retried.
+    if (hideRecordView && hideRecordView.superview == window) return;
+
+    hideRecordTextfield = [[UITextField alloc] initWithFrame:CGRectZero];
+    hideRecordTextfield.secureTextEntry = YES;
+
+    // Use a normal transparent host view. Do not depend on private UITextField
+    // layer delegates: their implementation is not a stable UIKit API.
+    hideRecordView = [[UIView alloc] initWithFrame:window.bounds];
+    hideRecordView.backgroundColor = UIColor.clearColor;
+    hideRecordView.userInteractionEnabled = NO; // Pass game touches through.
+    hideRecordView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    [hideRecordView addSubview:hideRecordTextfield];
+    [window addSubview:hideRecordView];
 
     if (!_vna) {
-         ImGuiDrawViewX *vc = [[ImGuiDrawViewX alloc] init];
-         _vna = vc;
+        _vna = [[ImGuiDrawViewX alloc] init];
     }
-
-    [ImGuiDrawViewX showChange:false];
+    _vna.view.frame = window.bounds;
+    _vna.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    _vna.view.backgroundColor = UIColor.clearColor;
+    _vna.view.userInteractionEnabled = NO; // MenuInteraction forwards menu touches.
+    [ImGuiDrawViewX showChange:NO];
     [hideRecordView addSubview:_vna.view];
 
-    menuTouchView = [[MenuInteraction alloc] initWithFrame:mainView.frame];
-    [[UIApplication sharedApplication].windows[0].rootViewController.view addSubview:menuTouchView];
+    menuTouchView = [[MenuInteraction alloc] initWithFrame:window.bounds];
+    menuTouchView.backgroundColor = UIColor.clearColor;
+    menuTouchView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    menuTouchView.userInteractionEnabled = NO;
+    [window addSubview:menuTouchView];
+    // Keep the touch-forwarding view above the game, but below the floating controls.
+    [window bringSubviewToFront:menuTouchView];
 
-    NSData* data = [[NSData alloc] initWithBase64EncodedString:baseimage options:0];
-    UIImage* menuIconImage = [UIImage imageWithData:data];
+    NSData *data = [[NSData alloc] initWithBase64EncodedString:baseimage options:0];
+    UIImage *menuIconImage = data ? [UIImage imageWithData:data] : nil;
 
-    CGPoint initialCenter = CGPointMake(mainView.frame.size.width / 2, mainView.frame.size.height / 2);
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    CGPoint initialCenter = CGPointMake(CGRectGetMidX(mainView.bounds), CGRectGetMidY(mainView.bounds));
+    NSUserDefaults *defaults = NSUserDefaults.standardUserDefaults;
     if ([defaults objectForKey:@"zst_ButtonPosX"] != nil) {
-        float posX = [defaults floatForKey:@"zst_ButtonPosX"];
-        float posY = [defaults floatForKey:@"zst_ButtonPosY"];
-        if (posX > 20 && posX < mainView.frame.size.width - 20 && posY > 20 && posY < mainView.frame.size.height - 20) {
+        CGFloat posX = [defaults floatForKey:@"zst_ButtonPosX"];
+        CGFloat posY = [defaults floatForKey:@"zst_ButtonPosY"];
+        if (posX > 20 && posX < mainView.bounds.size.width - 20 &&
+            posY > 20 && posY < mainView.bounds.size.height - 20) {
             initialCenter = CGPointMake(posX, posY);
         }
     }
 
-    InvisibleMenuButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    InvisibleMenuButton = [UIButton buttonWithType:UIButtonTypeCustom];
     InvisibleMenuButton.frame = CGRectMake(0, 0, 50, 50);
     InvisibleMenuButton.center = initialCenter;
-    InvisibleMenuButton.backgroundColor = [UIColor clearColor];
+    InvisibleMenuButton.backgroundColor = UIColor.clearColor;
     [InvisibleMenuButton addTarget:self action:@selector(buttonDragged:withEvent:) forControlEvents:UIControlEventTouchDragInside];
-    [InvisibleMenuButton addTarget:self action:@selector(buttonDragEnded:) forControlEvents:UIControlEventTouchUpInside];
-    [InvisibleMenuButton addTarget:self action:@selector(buttonDragEnded:) forControlEvents:UIControlEventTouchUpOutside];
+    [InvisibleMenuButton addTarget:self action:@selector(buttonDragEnded:) forControlEvents:UIControlEventTouchUpInside | UIControlEventTouchUpOutside];
     [InvisibleMenuButton addTarget:self action:@selector(buttonDragStarted:) forControlEvents:UIControlEventTouchDown];
-    UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(showMenu:)];
-    [InvisibleMenuButton addGestureRecognizer:tapGestureRecognizer];
-    [[UIApplication sharedApplication].windows[0].rootViewController.view addSubview:InvisibleMenuButton];
+    [InvisibleMenuButton addTarget:self action:@selector(showMenuButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+    [window addSubview:InvisibleMenuButton];
 
-    VisibleMenuButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    VisibleMenuButton = [UIButton buttonWithType:UIButtonTypeCustom];
     VisibleMenuButton.frame = CGRectMake(0, 0, 50, 50);
     VisibleMenuButton.center = initialCenter;
-    VisibleMenuButton.backgroundColor = [UIColor clearColor];
-    VisibleMenuButton.layer.cornerRadius = VisibleMenuButton.frame.size.width * 0.5f;
+    VisibleMenuButton.backgroundColor = UIColor.clearColor;
+    VisibleMenuButton.layer.cornerRadius = 25.0;
     VisibleMenuButton.layer.masksToBounds = YES;
-    VisibleMenuButton.layer.borderWidth = 2.0f;
+    VisibleMenuButton.layer.borderWidth = 2.0;
     VisibleMenuButton.layer.borderColor = [UIColor colorWithRed:0.2f green:0.85f blue:1.0f alpha:0.85f].CGColor;
-    [VisibleMenuButton setBackgroundImage:menuIconImage forState:UIControlStateNormal];
+    if (menuIconImage) [VisibleMenuButton setBackgroundImage:menuIconImage forState:UIControlStateNormal];
     VisibleMenuButton.layer.opacity = mods.IconOpacity > 0.1f ? mods.IconOpacity : 0.7f;
     VisibleMenuButton.hidden = !mods.ShowFloatingIcon;
     InvisibleMenuButton.hidden = !mods.ShowFloatingIcon;
-    [hideRecordView addSubview:VisibleMenuButton];
+    VisibleMenuButton.userInteractionEnabled = NO; // Invisible button receives taps.
+    [window addSubview:VisibleMenuButton];
+    [window bringSubviewToFront:InvisibleMenuButton];
 
-    // Cử chỉ chạm 3 ngón tay để bật/tắt Menu nhanh chóng
     UITapGestureRecognizer *threeFingerTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleThreeFingerTap:)];
     threeFingerTap.numberOfTouchesRequired = 3;
-    [[UIApplication sharedApplication].keyWindow addGestureRecognizer:threeFingerTap];
+    [window addGestureRecognizer:threeFingerTap];
+}
+
+-(void)showMenuButtonTapped:(UIButton *)button {
+    [ImGuiDrawViewX showChange:![ImGuiDrawViewX isMenuShowing]];
 }
 
 -(void)handleThreeFingerTap:(UITapGestureRecognizer *)gesture {
@@ -175,7 +225,9 @@ bool isOpened = false;
 
     button.center = CGPointMake(button.center.x + delta_x, button.center.y + delta_y);
 
-    CGRect mainFrame = [UIApplication sharedApplication].windows[0].rootViewController.view.bounds;
+    UIWindow *window = ZSTargetWindow();
+    CGRect mainFrame = window.rootViewController.view.bounds;
+    if (!window) return;
     if (button.center.x < 0) button.center = CGPointMake(0, button.center.y);
     if (button.center.y < 0) button.center = CGPointMake(button.center.x, 0);
     if (button.center.y > mainFrame.size.height) button.center = CGPointMake(button.center.x, mainFrame.size.height);
