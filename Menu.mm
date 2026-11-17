@@ -21,18 +21,15 @@ int ActiveTextColor[4] = { 255, 255, 255, 255 };
 int GrabColor[4] = { 72, 71, 78, 255 };
 bool lightTheme = false;
 
-static int PageNumber = 0; // 0: User, 1: Xe, 2: Áo, 3: Setting
+// Fix cái lỗi linker thiếu biến speed
+int speed = 10; 
+
+static int PageNumber = 0; 
 static bool isMenuOpen = true;
 static bool isTransparentMode = false;
 static bool autoDuaLapTrinh = false;
 
 std::map<std::string, bool> childVisibilityMap;
-
-static int deepFadeAnimation = 255;
-static bool animationEx = false;
-static float animationButton = 25;
-static float position = 25;
-int animation_text = 255;
 
 static float columnOffset = 60.0f;
 static float targetOffset = 60.0f;
@@ -105,7 +102,10 @@ void ApplyTheme(int preset) {
     SetStyles();
 }
 
-// --- HUD & OVERLAYS (Giữ nguyên) ---
+// Hàm rỗng fix lỗi linker
+void LightTheme() { }
+
+// --- HUD & OVERLAYS ---
 void RenderHUD() { /* ... */ }
 void RenderDriftGuide() { /* ... */ }
 void RenderSpeedometer() { /* ... */ }
@@ -301,7 +301,7 @@ void LoadMenu() {
     ImGui::PopStyleVar();
 }
 
-// --- KHỞI TẠO BAN ĐẦU (ĐÃ FIX LỖI) ---
+// --- KHỞI TẠO BAN ĐẦU ---
 static void didFinishLaunching(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef info) {
   timer(5) {
     LoadMods();
