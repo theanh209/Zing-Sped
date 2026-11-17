@@ -23,7 +23,7 @@ bool lightTheme = false;
 
 // Fix các lỗi linker
 int speed = 10; 
-int animation_text = 255; // <--- Đã thêm vào đây
+int animation_text = 255; 
 
 static int PageNumber = 0; 
 static bool isMenuOpen = true;
@@ -102,9 +102,6 @@ void ApplyTheme(int preset) {
     }
     SetStyles();
 }
-
-// Hàm rỗng fix lỗi linker
-void LightTheme() { }
 
 // --- HUD & OVERLAYS ---
 void RenderHUD() { /* ... */ }
