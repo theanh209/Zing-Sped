@@ -24,8 +24,6 @@ bool lightTheme = false;
 static int PageNumber = 0; // 0: User, 1: Xe, 2: Áo, 3: Setting
 static bool isMenuOpen = true;
 static bool isTransparentMode = false;
-
-// Trạng thái cho Auto Đua
 static bool autoDuaLapTrinh = false;
 
 std::map<std::string, bool> childVisibilityMap;
@@ -42,6 +40,8 @@ float animationSpeed = 130.0f;
 bool newChildVisible;
 bool ToggleAnimations = false;
 
+NSString *baseimage = @"DÁN_BASE64";
+
 // --- STYLE & THEME ---
 void SetStyles() {
     ImGuiStyle* style = &ImGui::GetStyle();
@@ -54,7 +54,6 @@ void SetStyles() {
     style->ChildRounding = 8.0f;
     style->ScrollbarSize = 15;
     
-    // Nền đen hoặc trong suốt
     ImVec4 bgColor = isTransparentMode ? ImVec4(15/255.0f, 18/255.0f, 24/255.0f, 0.4f) : ImVec4(15/255.0f, 18/255.0f, 24/255.0f, 0.95f);
     ImVec4 childBg = isTransparentMode ? ImVec4(30/255.0f, 35/255.0f, 45/255.0f, 0.4f) : ImVec4(30/255.0f, 35/255.0f, 45/255.0f, 0.8f);
     
@@ -72,7 +71,6 @@ void SetStyles() {
     style->Colors[ImGuiCol_ButtonHovered] = ImColor(60, 65, 80, 200);
     style->Colors[ImGuiCol_ButtonActive] = ImColor(70, 75, 90, 220);
     
-    // Màu Switch (Toggle) dạng xám nhẹ khi ON
     style->Colors[ImGuiCol_CheckMark] = ImColor(255, 255, 255, 255); 
     style->Colors[ImGuiCol_SliderGrab] = ImColor(72, 71, 78, 255);
     style->Colors[ImGuiCol_SliderGrabActive] = ImColor(138, 147, 163, 255);
@@ -96,7 +94,7 @@ void ApplyCustomColors(float r, float g, float b, float bgR, float bgG, float bg
 void ApplyTheme(int preset) {
     mods.UseCustomTheme = false;
     mods.ThemePreset = preset;
-    if (preset == 0) { // Dark Classic
+    if (preset == 0) { 
         BGColor[0] = 17; BGColor[1] = 17; BGColor[2] = 19;
         ChildColor[0] = 22; ChildColor[1] = 21; ChildColor[2] = 26;
         IconChildColor[0] = 25; IconChildColor[1] = 26; IconChildColor[2] = 31;
@@ -104,14 +102,13 @@ void ApplyTheme(int preset) {
         ActiveTextColor[0] = 255; ActiveTextColor[1] = 255; ActiveTextColor[2] = 255;
         GrabColor[0] = 72; GrabColor[1] = 71; GrabColor[2] = 78;
     }
-    // ... (Mày giữ nguyên mấy cái preset 1 đến 6 của mày ở đây)
     SetStyles();
 }
 
 // --- HUD & OVERLAYS (Giữ nguyên) ---
-void RenderHUD() { /* Code HUD cũ */ }
-void RenderDriftGuide() { /* Code Drift cũ */ }
-void RenderSpeedometer() { /* Code Speedometer cũ */ }
+void RenderHUD() { /* ... */ }
+void RenderDriftGuide() { /* ... */ }
+void RenderSpeedometer() { /* ... */ }
 
 // --- MENU CHÍNH ---
 void LoadMenu() {
@@ -121,37 +118,29 @@ void LoadMenu() {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::Begin("##ZingSpeedMenu", NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings);
 
-    // Cập nhật màu nền nếu đang bật chế độ trong suốt
     ImGui::PushStyleColor(ImGuiCol_ChildBg, isTransparentMode ? ImVec4(15/255.0f, 18/255.0f, 24/255.0f, 0.4f) : ImVec4(15/255.0f, 18/255.0f, 24/255.0f, 0.95f));
     
-    // Chia 2 cột: Sidebar và Nội dung
     ImGui::Columns(2, "MainLayout", false);
     ImGui::SetColumnWidth(0, 60.0f); 
 
-    // ==========================================
-    // 1. SIDEBAR TRÁI
-    // ==========================================
+    // SIDEBAR TRÁI
     ImGui::BeginChild("##Sidebar", ImVec2(60, 0), true);
     {
         ImVec4 iconColor = ImVec4(InactiveTextColor[0]/255.0f, InactiveTextColor[1]/255.0f, InactiveTextColor[2]/255.0f, 1.0f);
         ImVec4 activeColor = ImVec4(255, 255, 255, 1.0f);
 
-        // Tab User
         if (PageNumber == 0) ImGui::PushStyleColor(ImGuiCol_Text, activeColor); else ImGui::PushStyleColor(ImGuiCol_Text, iconColor);
         if (ImGui::Button(ICON_FA_USER "##Tab0", ImVec2(44, 44))) { PageNumber = 0; TriggerHaptic(0); }
         ImGui::PopStyleColor();
 
-        // Tab Xe
         if (PageNumber == 1) ImGui::PushStyleColor(ImGuiCol_Text, activeColor); else ImGui::PushStyleColor(ImGuiCol_Text, iconColor);
         if (ImGui::Button(ICON_FA_CAR "##Tab1", ImVec2(44, 44))) { PageNumber = 1; TriggerHaptic(0); }
         ImGui::PopStyleColor();
 
-        // Tab Áo
         if (PageNumber == 2) ImGui::PushStyleColor(ImGuiCol_Text, activeColor); else ImGui::PushStyleColor(ImGuiCol_Text, iconColor);
         if (ImGui::Button(ICON_FA_TSHIRT "##Tab2", ImVec2(44, 44))) { PageNumber = 2; TriggerHaptic(0); }
         ImGui::PopStyleColor();
 
-        // Tab Setting
         if (PageNumber == 3) ImGui::PushStyleColor(ImGuiCol_Text, activeColor); else ImGui::PushStyleColor(ImGuiCol_Text, iconColor);
         if (ImGui::Button(ICON_FA_COG "##Tab3", ImVec2(44, 44))) { PageNumber = 3; TriggerHaptic(0); }
         ImGui::PopStyleColor();
@@ -160,21 +149,16 @@ void LoadMenu() {
 
     ImGui::NextColumn();
 
-    // ==========================================
-    // 2. KHU VỰC NỘI DUNG & DRAWER
-    // ==========================================
-    // Tính toán xem có Drawer nào đang mở không
+    // KHU VỰC NỘI DUNG & DRAWER
     bool isDrawerOpen = false;
     for (const auto & pair : childVisibilityMap) {
         if (pair.second) { isDrawerOpen = true; break; }
     }
 
-    // Nếu có drawer mở, thu hẹp vùng nội dung chính lại
     float mainContentWidth = isDrawerOpen ? (ImGui::GetContentRegionAvail().x * 0.5f) : ImGui::GetContentRegionAvail().x;
     
     ImGui::BeginChild("##MainContent", ImVec2(mainContentWidth, 0), false);
     {
-        // --- HEADER ---
         ImGui::BeginChild("##Header", ImVec2(0, 50), false);
         {
             ImGui::SetCursorPos(ImVec2(15, 15));
@@ -183,7 +167,6 @@ void LoadMenu() {
             else if (PageNumber == 2) ImGui::Text(ICON_FA_TSHIRT "  SKIN & MODS");
             else if (PageNumber == 3) ImGui::Text(ICON_FA_COG "  SETTINGS");
 
-            // Nút Kim Cương & Nút X (Căn phải)
             ImGui::SameLine(ImGui::GetContentRegionAvail().x - 85);
             if (ImGui::Button(ICON_FA_GEM "##Gem", ImVec2(34, 34))) {
                 isTransparentMode = !isTransparentMode;
@@ -192,18 +175,16 @@ void LoadMenu() {
             }
             ImGui::SameLine();
             if (ImGui::Button(ICON_FA_TIMES "##Close", ImVec2(34, 34))) {
-                isMenuOpen = false; // Ẩn menu
+                isMenuOpen = false;
                 TriggerHaptic(0);
             }
             ImGui::Separator();
         }
         ImGui::EndChild();
 
-        // --- NỘI DUNG CÁC TAB ---
         ImGui::BeginChild("##TabContent", ImVec2(0, 0), false);
         {
             if (PageNumber == 0) {
-                // TAB USER: Các tính năng chức năng
                 newChildVisible = childVisibilityMap["Teleport Auto"];
                 ToggleWidget(ICON_FA_LOCATION_ARROW, "Teleport Auto", &mods.TeleportAuto, &newChildVisible);
                 childVisibilityMap["Teleport Auto"] = newChildVisible;
@@ -229,7 +210,6 @@ void LoadMenu() {
                 childVisibilityMap["Gia Tốc"] = newChildVisible;
             } 
             else if (PageNumber == 1) {
-                // TAB XE: Auto Đua Lập Trình
                 if (ToggleWidget(ICON_FA_ROBOT, "Auto Đua Lập Trình", &autoDuaLapTrinh, &newChildVisible)) {
                     TriggerHaptic(0);
                     mods.AutoDuaLapTrinh = autoDuaLapTrinh;
@@ -237,7 +217,6 @@ void LoadMenu() {
                 }
                 childVisibilityMap["Auto Đua Lập Trình"] = newChildVisible;
 
-                // Khung cảnh báo khi bật Auto Đua
                 if (autoDuaLapTrinh) {
                     ImGui::Spacing();
                     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(40/255.0f, 35/255.0f, 25/255.0f, 0.6f));
@@ -268,7 +247,6 @@ void LoadMenu() {
                 childVisibilityMap["Chỉnh tốc độ Replay"] = newChildVisible;
             }
             else if (PageNumber == 2) {
-                // TAB ÁO: Skin
                 newChildVisible = childVisibilityMap["Mod Skin"];
                 ToggleWidget(ICON_FA_TSHIRT, "Mod Skin", &mods.ModSkin, &newChildVisible);
                 childVisibilityMap["Mod Skin"] = newChildVisible;
@@ -278,13 +256,11 @@ void LoadMenu() {
                 childVisibilityMap["Unlock Xe+Skin"] = newChildVisible;
             }
             else if (PageNumber == 3) {
-                // TAB SETTING: Tác giả & Offset
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(30/255.0f, 35/255.0f, 45/255.0f, 0.8f));
                 
                 if (ImGui::Button(ICON_FA_CROWN "  Tác giả: Ng The Anh", ImVec2(ImGui::GetContentRegionAvail().x, 40))) {
                     TriggerHaptic(0);
                     CopyToClipboard("@tranggnekk");
-                    // Có thể show alert
                 }
                 
                 ImGui::Spacing();
@@ -301,25 +277,18 @@ void LoadMenu() {
     }
     ImGui::EndChild();
 
-    // ==========================================
-    // 3. DRAWER BÊN PHẢI (NẾU CÓ)
-    // ==========================================
     if (isDrawerOpen) {
         ImGui::SameLine();
         ImGui::BeginChild("##Drawer", ImVec2(0, 0), true);
         {
             for (const auto & pair : childVisibilityMap) {
                 if (pair.second) {
-                    // Vẽ tiêu đề Drawer
                     ImGui::SetCursorPos(ImVec2(10, 10));
                     ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "%s Settings", pair.first.c_str());
                     ImGui::Separator();
                     ImGui::Spacing();
-                    
-                    // Nội dung chi tiết (Mày có thể nhét thêm logic SliderFloatMini vào đây)
                     ImGui::TextWrapped("Cấu hình chi tiết cho tính năng %s.", pair.first.c_str());
-                    
-                    break; // Chỉ vẽ cái đầu tiên đang mở
+                    break; 
                 }
             }
         }
@@ -332,19 +301,25 @@ void LoadMenu() {
     ImGui::PopStyleVar();
 }
 
-// --- KHỞI TẠO BAN ĐẦU ---
+// --- KHỞI TẠO BAN ĐẦU (ĐÃ FIX LỖI) ---
 static void didFinishLaunching(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef info) {
   timer(5) {
     LoadMods();
     ApplyTheme(mods.ThemePreset);
     ApplyFPS(mods.TargetFPS);
     UpdateFloatingIcon(mods.IconSize, mods.IconOpacity);
+    SCLAlertView *alert = [[SCLAlertView alloc] initWithNewWindow];
+    alert.customViewColor = [UIColor colorWithRed:0.15 green:0.65 blue:1.0 alpha:1.0];
+    [alert showSuccess:@"ZingSpeedTweakIOS"
+              subTitle:@"Mod Menu loaded successfully!\nTac gia: Ng The Anh\nChuc ban choi game vui ve!"
+      closeButtonTitle:@"OK"
+              duration:5.0f];
   });
 }
 
 struct MyStruct {
   MyStruct() {
-    CFNotificationCenterAddObserver(CFNotificationCenterGetLocalCenter(), NULL, &didFinishLaunching, (CFStringRef)UIApplicationDidFinishLaunchingNotification, NULL, CFStringRef info) { /*...*/ }
+    CFNotificationCenterAddObserver(CFNotificationCenterGetLocalCenter(), NULL, &didFinishLaunching, (CFStringRef)UIApplicationDidFinishLaunchingNotification, NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
   }
 };
 MyStruct mystruct;
