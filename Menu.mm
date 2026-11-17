@@ -21,8 +21,9 @@ int ActiveTextColor[4] = { 255, 255, 255, 255 };
 int GrabColor[4] = { 72, 71, 78, 255 };
 bool lightTheme = false;
 
-// Fix cái lỗi linker thiếu biến speed
+// Fix các lỗi linker
 int speed = 10; 
+int animation_text = 255; // <--- Đã thêm vào đây
 
 static int PageNumber = 0; 
 static bool isMenuOpen = true;
