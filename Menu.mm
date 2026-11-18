@@ -239,10 +239,10 @@ void LoadMenu() {
                 
                 ImGui::Spacing();
                 
-                if (ImGui::Button("Offset", ImVec2(ImGui::GetContentRegionAvail().x, 40))) {
-                    TriggerHaptic(0);
-                    LoadDynamicOffsets();
-                }
+                //if (ImGui::Button("Offset", ImVec2(ImGui::GetContentRegionAvail().x, 40))) {
+                  //  TriggerHaptic(0);
+                  //  LoadDynamicOffsets();
+               // }
                 
                 ImGui::PopStyleColor();
             }
