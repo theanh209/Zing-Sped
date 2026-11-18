@@ -658,38 +658,31 @@ Vector2D EvaluateCatmullRom(Vector2D p0, Vector2D p1, Vector2D p2, Vector2D p3, 
 }
 
 float ComputePurePursuitSteering(float currentX, float currentZ, float currentYaw, float targetX, float targetZ, float speed) {
-    // 1. Tính Lookahead Distance thích ứng với vận tốc: L = clamp(k * v, L_min, L_max)
     float lookahead = mods.LookaheadRatio * speed;
     if (lookahead < 8.0f) lookahead = 8.0f;
     if (lookahead > 35.0f) lookahead = 35.0f;
 
-    // 2. Vector tới điểm mục tiêu
     float dx = targetX - currentX;
     float dz = targetZ - currentZ;
     float dist = sqrtf(dx * dx + dz * dz);
     if (dist < 0.001f) return 0.0f;
 
-    // 3. Góc hướng mục tiêu so với hướng xe (Alpha)
     float targetAngle = atan2f(dx, dz) * (180.0f / 3.14159265f);
     float alpha = targetAngle - currentYaw;
     while (alpha > 180.0f) alpha -= 360.0f;
     while (alpha < -180.0f) alpha += 360.0f;
 
-    // 4. Độ cong Pure Pursuit: kappa = 2 * sin(alpha) / L
     float alphaRad = alpha * (3.14159265f / 180.0f);
     float kappa = (2.0f * sinf(alphaRad)) / lookahead;
 
-    // 5. Góc bẻ lái mục tiêu theo chiều dài cơ sở xe (wheelbase ~ 2.6m)
     float wheelbase = 2.6f;
     float rawSteering = atanf(kappa * wheelbase) * (180.0f / 3.14159265f);
 
-    // 6. Áp dụng bộ điều khiển PID nếu bật
     if (mods.UsePIDController) {
         float pidCorrection = g_steeringPID.Update(alpha, 0.016f, mods.PID_Kp, mods.PID_Ki, mods.PID_Kd);
         rawSteering = pidCorrection;
     }
 
-    // Giới hạn góc bẻ lái thực tế (-45 deg đến +45 deg)
     if (rawSteering > 45.0f) rawSteering = 45.0f;
     if (rawSteering < -45.0f) rawSteering = -45.0f;
     return rawSteering;
@@ -700,41 +693,34 @@ float g_playerYaw = 0.0f;
 int g_currentWaypointIndex = 0;
 int g_totalWaypoints = 12;
 
-// Tọa độ thực tế theo từng bản đồ ZingSpeed Mobile (Map Waypoint Coordinates)
 static const Vector2D s_mapWaypoints[6][16] = {
-    // Map 0: Map 157 - Hồ Long Tỉnh (12 mốc cua uốn lượn quanh hồ)
     {
         { 0.0f, 0.0f }, { 35.0f, 85.0f }, { 120.0f, 160.0f }, { 210.0f, 190.0f },
         { 310.0f, 150.0f }, { 380.0f, 60.0f }, { 360.0f, -60.0f }, { 280.0f, -150.0f },
         { 160.0f, -190.0f }, { 60.0f, -160.0f }, { -20.0f, -90.0f }, { 0.0f, 0.0f }
     },
-    // Map 1: Map 102 - Thành Phố 11 (14 mốc góc phố vuông 90 deg)
     {
         { 0.0f, 0.0f }, { 0.0f, 150.0f }, { 45.0f, 210.0f }, { 160.0f, 210.0f },
         { 220.0f, 160.0f }, { 220.0f, 40.0f }, { 280.0f, -10.0f }, { 390.0f, -10.0f },
         { 450.0f, -70.0f }, { 450.0f, -220.0f }, { 390.0f, -280.0f }, { 180.0f, -280.0f },
         { 60.0f, -180.0f }, { 0.0f, 0.0f }
     },
-    // Map 2: Map 120 - Đảo 11 (12 mốc bờ biển & dốc bay)
     {
         { 0.0f, 0.0f }, { -40.0f, 95.0f }, { -110.0f, 190.0f }, { -80.0f, 290.0f },
         { 20.0f, 350.0f }, { 130.0f, 320.0f }, { 190.0f, 220.0f }, { 170.0f, 110.0f },
         { 240.0f, 30.0f }, { 200.0f, -80.0f }, { 80.0f, -90.0f }, { 0.0f, 0.0f }
     },
-    // Map 3: Map 145 - Thu Danh Sơn (16 mốc cua 5 liên hoàn Hairpin 180 deg)
     {
         { 0.0f, 0.0f }, { 25.0f, 110.0f }, { 90.0f, 160.0f }, { 15.0f, 220.0f },
         { 85.0f, 280.0f }, { 10.0f, 340.0f }, { 80.0f, 400.0f }, { 15.0f, 460.0f },
         { 120.0f, 520.0f }, { 210.0f, 450.0f }, { 190.0f, 320.0f }, { 230.0f, 210.0f },
         { 180.0f, 110.0f }, { 120.0f, 40.0f }, { 40.0f, -30.0f }, { 0.0f, 0.0f }
     },
-    // Map 4: Map 188 - Suối Nước Nóng (12 mốc đường trơn & hang động)
     {
         { 0.0f, 0.0f }, { -30.0f, 80.0f }, { -90.0f, 140.0f }, { -140.0f, 240.0f },
         { -90.0f, 330.0f }, { 30.0f, 360.0f }, { 140.0f, 300.0f }, { 180.0f, 190.0f },
         { 220.0f, 90.0f }, { 170.0f, -20.0f }, { 70.0f, -60.0f }, { 0.0f, 0.0f }
     },
-    // Map 5: Map 210 - Sa Mạc Tốc Độ (12 mốc đường đua mở rộng tốc độ cao)
     {
         { 0.0f, 0.0f }, { 60.0f, 140.0f }, { 180.0f, 260.0f }, { 320.0f, 310.0f },
         { 450.0f, 240.0f }, { 520.0f, 110.0f }, { 480.0f, -40.0f }, { 360.0f, -160.0f },
@@ -750,7 +736,6 @@ void ProcessAutoDrive(uintptr_t kart) {
     float dt = 0.016f;
     float currentSpeed = mods.GiaToc ? mods.GiaTocSpeed : 225.0f;
 
-    // 1. CẬP NHẬT TỌA ĐỘ VÀ HƯỚNG XE THỰC TẾ (REAL POSITION ENGINE)
     Vector3D memPos = { 0.0f, 0.0f, 0.0f };
     if (gameOffsets.PositionOffset && SafeRead<Vector3D>(kart + gameOffsets.PositionOffset, &memPos)) {
         if (fabsf(memPos.x) > 0.01f || fabsf(memPos.z) > 0.01f) {
@@ -762,14 +747,12 @@ void ProcessAutoDrive(uintptr_t kart) {
             g_playerPos = memPos;
         }
     } else {
-        // Tích phân động học Dead-Reckoning Odometry bảo toàn tọa độ liên tục
         float yawRad = g_playerYaw * (3.14159265f / 180.0f);
         float v_mps = currentSpeed * (1000.0f / 3600.0f);
         g_playerPos.x += sinf(yawRad) * v_mps * dt;
         g_playerPos.z += cosf(yawRad) * v_mps * dt;
     }
 
-    // 2. KHÓA MỐC WAYPOINT GẦN NHẤT THEO MAP ĐƯỢC CHỌN (NEAREST WAYPOINT LOCKING)
     int mapIdx = (mods.SelectedMapIndex >= 0 && mods.SelectedMapIndex < 6) ? mods.SelectedMapIndex : 0;
     int numWP = s_mapWaypointCounts[mapIdx];
     g_totalWaypoints = numWP;
@@ -787,7 +770,6 @@ void ProcessAutoDrive(uintptr_t kart) {
     }
     g_currentWaypointIndex = closestIdx;
 
-    // 3. TÍNH TOÁN QUỸ ĐẠO BẰNG CATMULL-ROM CUBIC SPLINE DỰA TRÊN MỐC GẦN NHẤT
     int p0_idx = (closestIdx + numWP - 1) % numWP;
     int p1_idx = closestIdx;
     int p2_idx = (closestIdx + 1) % numWP;
@@ -798,7 +780,6 @@ void ProcessAutoDrive(uintptr_t kart) {
     Vector2D p2 = s_mapWaypoints[mapIdx][p2_idx];
     Vector2D p3 = s_mapWaypoints[mapIdx][p3_idx];
 
-    // Tham số nội suy t dọc theo đoạn [p1, p2]
     float segDx = p2.x - p1.x;
     float segDz = p2.y - p1.y;
     float segLen = sqrtf(segDx * segDx + segDz * segDz);
@@ -812,11 +793,9 @@ void ProcessAutoDrive(uintptr_t kart) {
 
     Vector2D targetSpline = EvaluateCatmullRom(p0, p1, p2, p3, t);
 
-    // Tịnh tiến điểm ngắm bám theo hướng nhìn trước
     targetSpline.x += (p2.x - targetSpline.x) * 0.60f;
     targetSpline.y += (p2.y - targetSpline.y) * 0.60f;
 
-    // 3.1. TÍNH NĂNG CHIẾN THẮNG 1: CẮT GÓC ĐI TẮT ÔM SÁT MÉP LỀ (APEX CORNER CUTTER)
     if (mods.ApexCornerCutter) {
         float tx = p2.x - p0.x;
         float ty = p2.y - p0.y;
@@ -829,30 +808,23 @@ void ProcessAutoDrive(uintptr_t kart) {
         }
     }
 
-    // 4. TÍNH TOÁN GÓC BẺ LÁI PURE PURSUIT & PID VỚI TỌA ĐỘ VÀ GÓC THỰC TẾ
     float steering = ComputePurePursuitSteering(g_playerPos.x, g_playerPos.z, g_playerYaw, targetSpline.x, targetSpline.y, currentSpeed);
 
-    // Cập nhật lại góc Yaw động học
     if (!gameOffsets.PositionOffset) {
         g_playerYaw += steering * dt * 2.2f;
         while (g_playerYaw > 180.0f) g_playerYaw -= 360.0f;
         while (g_playerYaw < -180.0f) g_playerYaw += 360.0f;
     }
 
-    // 4.1. TÍNH NĂNG CHIẾN THẮNG 2: CHỐNG VĂNG KHI VA CHẠM & TỰ HỒI PHỤC (ANTI-BUMP RECOVERY)
     if (mods.AntiBumpRecovery) {
         if (gameOffsets.CollisionOffset) {
             SafeWrite<float>(kart + gameOffsets.CollisionOffset, 0.0f);
         }
     }
 
-    // 3. MÔ HÌNH VẬT LÝ GÓC TRƯỢT LỐP (SLIP ANGLE)
     float slipAngle = fabsf(steering);
 
-    // 3.1. TÍNH NĂNG CHIẾN THẮNG 3: KHÓA GÓC DRIFT TỐI THIỂU GIỮ TỐC 198-205 KM/H (MIN-DRIFT LOCK)
     if (mods.LockMinDriftAngle && slipAngle >= 28.0f) {
-        // Ghìm góc trượt tại ngưỡng tối thiểu vừa đủ tích Nitro (mặc định 29.5 deg)
-        // Ngăn xe bị quặt cua quá đà 50-60 deg gây tụt tốc thảm hại về 160km/h
         float sign = (steering >= 0.0f) ? 1.0f : -1.0f;
         if (slipAngle > mods.MinDriftAngleVal) {
             steering = sign * mods.MinDriftAngleVal;
@@ -870,25 +842,20 @@ void ProcessAutoDrive(uintptr_t kart) {
         }
     }
 
-    // 4. TÍNH NĂNG CHIẾN THẮNG 4 & 5: AUTO ĐOẠN DRIFT (SNAP RESET) & COMBO CWW CHUẨN KHUNG HÌNH
     static float driftAccumulator = 0.0f;
     static int cwwChainStep = 0;
     static float cwwStepTimer = 0.0f;
 
     if (slipAngle >= 28.0f) {
-        // Tích phân thời gian trượt bánh theo góc drift
         driftAccumulator += 0.016f * (slipAngle / 30.0f);
 
-        // Ngưỡng đủ bình Nitro (~0.70s)
         if (driftAccumulator >= 0.70f) {
-            // 4.1. AUTO SNAP DRIFT: Đảo ngược lái 0.05s để giật thẳng thân xe ngay lập tức
             if (mods.AutoSnapDrift) {
                 steering = -steering * 0.75f;
             }
 
-            // Kích hoạt chuỗi CWW combo chuẩn khung hình
             if (mods.PerfectCWWChain || (mods.AutoCWWSequence && mods.PredictCWWMillisecond)) {
-                cwwChainStep = 1; // Bắt đầu chuỗi CWW Step 1: Nhả drift + Mini boost 1
+                cwwChainStep = 1;
                 cwwStepTimer = 0.0f;
             }
             driftAccumulator = 0.0f;
@@ -897,21 +864,18 @@ void ProcessAutoDrive(uintptr_t kart) {
         driftAccumulator = 0.0f;
     }
 
-    // Thực thi chuỗi Combo CWW Boost (Frame-Perfect Execution)
     if (cwwChainStep > 0) {
         cwwStepTimer += 0.016f;
         if (cwwChainStep == 1 && cwwStepTimer >= 0.05f) {
-            // Step 2: Phun bình Nitro chính
             if (gameOffsets.NitroOffset) {
                 SafeWrite<float>(kart + gameOffsets.NitroOffset, mods.NitroDuration);
             }
             cwwChainStep = 2;
         } else if (cwwChainStep == 2 && cwwStepTimer >= 0.13f) {
-            // Step 3: Kích hoạt Mini boost 2 tạo Super CWW đạt tốc kịch kim 312 - 318 km/h
             if (gameOffsets.SpeedOffset && mods.GiaToc) {
                 SafeWrite<float>(kart + gameOffsets.SpeedOffset, mods.GiaTocSpeed);
             }
-            cwwChainStep = 0; // Hoàn thành chuỗi combo
+            cwwChainStep = 0;
             cwwStepTimer = 0.0f;
         }
     }
@@ -1103,7 +1067,7 @@ void PushTelemetryToCloud() {
     if (!mods.CloudRadarEnabled) return;
     static NSTimeInterval lastCloudPush = 0;
     NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
-    if (now - lastCloudPush < 0.045) return; // ~22 FPS tối ưu băng thông
+    if (now - lastCloudPush < 0.045) return; 
     lastCloudPush = now;
 
     int mapIdx = (mods.SelectedMapIndex >= 0 && mods.SelectedMapIndex < 6) ? mods.SelectedMapIndex : 0;
@@ -1160,62 +1124,36 @@ void LoadMods()
 {
     // Tải cấu hình đã lưu
     LoadConfig();
-
-    // Áp dụng tần số quét FPS
     ApplyFPS(mods.TargetFPS);
-
-    // Tự động nạp file Offsets.json trong Documents
     LoadDynamicOffsets();
-
-    // Khởi tạo bộ chặn log / anti-report
     InitAntiReport();
 
-    // Tự động kích hoạt Web Radar Server nếu được bật trong cấu hình
     if (mods.WebRadarEnabled) {
         StartWebRadarServer();
     }
 
-    // Khởi tạo luồng chạy ngầm 60fps tối ưu
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    // 🛡️ FIX CRASH: Trì hoãn 5s để Unity Engine khởi động hoàn toàn
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         while (true) {
             @autoreleasepool {
                 uintptr_t base = GetUnityBase();
-                if (base) {
-                    // === KHU VỰC CAN THIỆP BỘ NHỚ ===
-                    uintptr_t gworld = gameOffsets.GWorld ? ReadMem<uintptr_t>(base + gameOffsets.GWorld) : 0;
-                    uintptr_t kart = (gworld && gameOffsets.PlayerKart) ? ReadMem<uintptr_t>(gworld + gameOffsets.PlayerKart) : 0;
+                if (base && base != 0) {
+                    // 🛡️ Kiểm tra Offset có dữ liệu chưa trước khi Read
+                    if (gameOffsets.GWorld != 0 && gameOffsets.PlayerKart != 0) {
+                        uintptr_t gworld = ReadMem<uintptr_t>(base + gameOffsets.GWorld);
+                        uintptr_t kart = (gworld && gameOffsets.PlayerKart) ? ReadMem<uintptr_t>(gworld + gameOffsets.PlayerKart) : 0;
 
-                    if (kart) {
-                        if (mods.VoHanNitro && gameOffsets.NitroOffset) {
-                            SafeWrite<float>(kart + gameOffsets.NitroOffset, mods.NitroDuration);
-                        }
-                        if (mods.GiaToc && gameOffsets.SpeedOffset) {
-                            SafeWrite<float>(kart + gameOffsets.SpeedOffset, mods.GiaTocSpeed);
-                        }
-
-                        if (mods.AutoDuaLapTrinh) {
-                            ProcessAutoDrive(kart);
-                        } else {
-                            // Cập nhật tọa độ thực tế phục vụ Live Web Radar PC ngay cả khi lái thủ công
-                            Vector3D memPos = { 0.0f, 0.0f, 0.0f };
-                            if (gameOffsets.PositionOffset && SafeRead<Vector3D>(kart + gameOffsets.PositionOffset, &memPos)) {
-                                if (fabsf(memPos.x) > 0.01f || fabsf(memPos.z) > 0.01f) {
-                                    float dx = memPos.x - g_playerPos.x;
-                                    float dz = memPos.z - g_playerPos.z;
-                                    if (sqrtf(dx * dx + dz * dz) > 0.05f) {
-                                        g_playerYaw = atan2f(dx, dz) * (180.0f / 3.14159265f);
-                                    }
-                                    g_playerPos = memPos;
-                                }
+                        if (kart) {
+                            if (mods.VoHanNitro && gameOffsets.NitroOffset) {
+                                SafeWrite<float>(kart + gameOffsets.NitroOffset, mods.NitroDuration);
+                            }
+                            if (mods.GiaToc && gameOffsets.SpeedOffset) {
+                                SafeWrite<float>(kart + gameOffsets.SpeedOffset, mods.GiaTocSpeed);
+                            }
+                            if (mods.AutoDuaLapTrinh) {
+                                ProcessAutoDrive(kart);
                             }
                         }
-                    }
-
-                    if (mods.AutoDuaLapTrinh) {
-                        // Code Auto Bám Đường
-                    }
-                    if (mods.AntiCollision) {
-                        // Code Giảm va chạm / Ổn định thân xe
                     }
                 }
 
@@ -1229,7 +1167,6 @@ void LoadMods()
                     });
                 }
 
-                // Đẩy Telemetry lên Cloud Hosting zingspeedvnmod.vercel.app nếu bật
                 if (mods.CloudRadarEnabled) {
                     PushTelemetryToCloud();
                 }
