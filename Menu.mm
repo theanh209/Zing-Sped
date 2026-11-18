@@ -11,6 +11,13 @@
 
 #define timer(sec) dispatch_after(dispatch_time(DISPATCH_TIME_NOW, sec * NSEC_PER_SEC), dispatch_get_main_queue(), ^
 
+// --- FIX LỖI BUILD UNDEFINED SYMBOLS ---
+// Các biến này được khai báo extern trong CustomWidgets.h nhưng thiếu file định nghĩa
+bool ToggleAnimations = false;
+bool newChildVisible = false;
+bool saveToggleStates = false;
+std::map<std::string, bool> childVisibilityMap;
+
 // --- BIẾN TOÀN CỤC ---
 bool showLogs = false;
 int ChildColor[4] = { 22, 21, 26, 255 };
@@ -51,7 +58,7 @@ void SetStyles() {
     style->Colors[ImGuiCol_ChildBg] = childBg;
     style->Colors[ImGuiCol_FrameBg] = ImColor(45, 50, 65, 180);
     style->Colors[ImGuiCol_FrameBgHovered] = ImColor(55, 60, 75, 200);
-    style->Colors[ImGuiCol_FrameBgActive] = ImColor(85, 88, 95, 255); // Màu xám khi bật ON
+    style->Colors[ImGuiCol_FrameBgActive] = ImColor(85, 88, 95, 255);
     style->Colors[ImGuiCol_TitleBg] = ImColor(25, 30, 40, 255);
     style->Colors[ImGuiCol_TitleBgActive] = ImColor(35, 40, 50, 255);
     style->Colors[ImGuiCol_Header] = ImColor(30, 35, 45, 200);
@@ -212,12 +219,10 @@ void LoadMenu() {
                 SimpleToggleWidget("Gia Tốc", &mods.GiaToc);
             } 
             else if (PageNumber == 1) {
-                // Đã bỏ hoàn toàn các khung cảnh báo và trạng thái khi bật Auto Đua Lập Trình
                 if (SimpleToggleWidget("Auto Đua Lập Trình", &autoDuaLapTrinh)) {
                     mods.AutoDuaLapTrinh = autoDuaLapTrinh;
                     SaveConfig();
                 }
-
                 SimpleToggleWidget("Chỉnh tốc độ Replay", &mods.NitroNhanh);
             }
             else if (PageNumber == 2) {
