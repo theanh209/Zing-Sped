@@ -13,13 +13,11 @@ TWEAK_NAME = ZingSpeedTweakIOS
 $(TWEAK_NAME)_FRAMEWORKS = UIKit Foundation Security QuartzCore CoreGraphics CoreText AVFoundation AudioToolbox Accelerate GLKit SystemConfiguration GameController Metal MetalKit
 $(TWEAK_NAME)_CCFLAGS = -std=c++17 -fno-rtti -fno-exceptions -DNDEBUG -Wno-error
 $(TWEAK_NAME)_CFLAGS = -fobjc-arc -w
-# Đã thêm Global.cpp vào danh sách file
-$(TWEAK_NAME)_FILES = Menu.mm Mods.mm Global.cpp $(wildcard ImGui/*.mm) $(wildcard ImGui/*.cpp) $(wildcard Includes/*.mm)  $(wildcard Includes/*.m) $(wildcard Includes/*.cpp) $(wildcard Includes/Esp/*.m) $(wildcard Includes/Hooking/*.mm) $(wildcard Includes/SCLAlertView/*.m)
+$(TWEAK_NAME)_FILES = Menu.mm Mods.mm $(wildcard ImGui/*.mm) $(wildcard ImGui/*.cpp) $(wildcard Includes/*.mm)  $(wildcard Includes/*.m) $(wildcard Includes/*.cpp) $(wildcard Includes/Esp/*.m) $(wildcard Includes/Hooking/*.mm) $(wildcard Includes/SCLAlertView/*.m)
 
 $(TWEAK_NAME)_LIBRARIES += substrate
 $(TWEAK_NAME)_LDFLAGS += -L./Includes/Libs
 $(TWEAK_NAME)_LDFLAGS += -lz -stdlib=libc++ -ldobby_fixed
-# THÊM DÒNG NÀY ĐỂ @rpath TÌM THẤY FILE DYLIB TRONG FRAMEWORKS
 $(TWEAK_NAME)_LDFLAGS += -rpath @executable_path/Frameworks
 
 include $(THEOS_MAKE_PATH)/tweak.mk
