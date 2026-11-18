@@ -24,4 +24,4 @@ include $(THEOS_MAKE_PATH)/tweak.mk
 include $(THEOS)/makefiles/aggregate.mk
 
 after-install::
-   install.exec "killall -9 Springboard || :" 
+	install.exec "killall -9 Springboard || :" 
