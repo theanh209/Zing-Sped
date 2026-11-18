@@ -1,4 +1,4 @@
-// File: Mods.mm (Bản chuẩn - An toàn, chống văng game)
+// File: Mods.mm (Bản Full - Tự động dùng Token)
 #include "Mods.h"
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
@@ -53,15 +53,6 @@ T ReadMem(uintptr_t addr, T defaultVal = T()) {
     return defaultVal;
 }
 
-template<typename T>
-bool SafeWrite(uintptr_t addr, T val) {
-    if (!IsValidAddress(addr)) return false;
-    kern_return_t kr = vm_protect(mach_task_self(), (vm_address_t)addr, sizeof(T), FALSE, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_COPY);
-    if (kr != KERN_SUCCESS) return false;
-    *(T*)addr = val;
-    return true;
-}
-
 // ==========================================
 // 3. BỘ RESOLVER TOKEN (TÌM ĐỊA CHỈ HÀM TỪ TOKEN)
 // ==========================================
@@ -95,7 +86,7 @@ uintptr_t ResolveToken(uint32_t token) {
 }
 
 // ==========================================
-// 4. CÁC HÀM TIỆN ÍCH (RUNG, ÂM THANH, CONFIG)
+// 4. CÁC HÀM TIỆN ÍCH
 // ==========================================
 void TriggerHaptic(int type) {
     if (!mods.HapticFeedback) return;
@@ -136,7 +127,7 @@ void ApplyFPS(int fps) {
 }
 
 // ==========================================
-// 5. LUỒNG CHÍNH (AN TOÀN - CHỐNG VĂNG GAME)
+// 5. LUỒNG CHÍNH CHẠY MOD
 // ==========================================
 void LoadMods()
 {
@@ -146,48 +137,41 @@ void LoadMods()
     uintptr_t offsetGWorld = 0x1AD99C40; 
     uintptr_t offsetPlayerKart = 0x40;
 
-    // 🛡️ Đợi 10 giây cho game khởi động ổn định hoàn toàn trước khi chạy vòng lặp đọc bộ nhớ
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(10.0 * NSEC_PER_SEC)), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         
-        // Giải mã các Token Hàm
-        uintptr_t func_SetSpeed = ResolveToken(0x0600B2C7); // SetNormalTopMPS (Gia Tốc)
-        uintptr_t func_SetNitro = ResolveToken(0x06033679); // set_CurEnergyValue (Vô hạn Nitro)
+        uintptr_t func_SetSpeed = ResolveToken(0x0600B2C7); 
+        uintptr_t func_SetNitro = ResolveToken(0x06033679); 
         
         while (true) {
             @autoreleasepool {
                 uintptr_t base = GetUnityBase();
                 
-                if (base != 0) {
-                    uintptr_t gworldAddr = base + offsetGWorld;
-                    if (IsValidAddress(gworldAddr)) {
-                        uintptr_t actorPool = ReadMem<uintptr_t>(gworldAddr);
-                        if (actorPool != 0 && IsValidAddress(actorPool)) {
-                            uintptr_t listViewPtr = actorPool + offsetPlayerKart;
-                            uintptr_t buffer = ReadMem<uintptr_t>(listViewPtr + 0x10);
+                if (base && base != 0) {
+                    uintptr_t actorPool = ReadMem<uintptr_t>(base + offsetGWorld);
+                    if (actorPool != 0) {
+                        uintptr_t listViewPtr = actorPool + offsetPlayerKart;
+                        uintptr_t buffer = ReadMem<uintptr_t>(listViewPtr + 0x10);
+                        
+                        if (buffer != 0) {
+                            uintptr_t kart = ReadMem<uintptr_t>(buffer);
                             
-                            if (buffer != 0 && IsValidAddress(buffer)) {
-                                uintptr_t kart = ReadMem<uintptr_t>(buffer);
+                            if (kart != 0) {
+                                if (mods.GiaToc && func_SetSpeed != 0) {
+                                    typedef void (*SetSpeedFunc)(void*, float);
+                                    SetSpeedFunc setSpeed = (SetSpeedFunc)func_SetSpeed;
+                                    setSpeed((void*)kart, mods.GiaTocSpeed);
+                                }
                                 
-                                // Kiểm tra kỹ địa chỉ kart hợp lệ trước khi thực thi gọi hàm tránh văng game
-                                if (kart != 0 && IsValidAddress(kart)) {
-                                    if (mods.GiaToc && func_SetSpeed != 0) {
-                                        typedef void (*SetSpeedFunc)(void*, float);
-                                        SetSpeedFunc setSpeed = (SetSpeedFunc)func_SetSpeed;
-                                        setSpeed((void*)kart, mods.GiaTocSpeed);
-                                    }
-                                    
-                                    if (mods.VoHanNitro && func_SetNitro != 0) {
-                                        typedef void (*SetEnergyFunc)(void*, float);
-                                        SetEnergyFunc setEnergy = (SetEnergyFunc)func_SetNitro;
-                                        setEnergy((void*)kart, 100.0f);
-                                    }
+                                if (mods.VoHanNitro && func_SetNitro != 0) {
+                                    typedef void (*SetEnergyFunc)(void*, float);
+                                    SetEnergyFunc setEnergy = (SetEnergyFunc)func_SetNitro;
+                                    setEnergy((void*)kart, 100.0f);
                                 }
                             }
                         }
                     }
                 }
-                // Giãn khoảng thời gian nghỉ xuống 0.05 giây để tối ưu hiệu năng CPU và chống crash do đọc ghi liên tục
-                [NSThread sleepForTimeInterval:0.05];
+                [NSThread sleepForTimeInterval:0.016];
             }
         }
     });
