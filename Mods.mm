@@ -1,4 +1,3 @@
-// File: Mods.mm (Bản Full - Tự động dùng Token)
 #include "Mods.h"
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
@@ -13,6 +12,18 @@
 Mods mods;
 GameOffsets gameOffsets;
 PIDState g_steeringPID;
+
+// ==========================================
+// CHECK QUYỀN ĐỌC BỘ NHỚ (TRÁNH VĂNG SIDELOAD)
+// ==========================================
+bool hasMemoryReadPermission() {
+    vm_address_t addr = (vm_address_t)0x100000000ULL; 
+    vm_size_t size = 0;
+    char buf[4];
+    kern_return_t kr = vm_read_overwrite(mach_task_self(), addr, 4, (vm_address_t)buf, &size);
+    // Nếu trả về KERN_PROTECTION_FAILURE là bị chặn (jailed/sideload) -> đéo có quyền đọc
+    return (kr != KERN_PROTECTION_FAILURE);
+}
 
 // ==========================================
 // 1. HÀM LẤY BASE ADDRESS
@@ -134,45 +145,48 @@ void LoadMods()
     LoadConfig();
     ApplyFPS(mods.TargetFPS);
     
+    if (!hasMemoryReadPermission()) {
+        NSLog(@"[ZingSpeedTweak] Khong co quyen doc mem (Jailed/Sideload). Ngung LoadMods.");
+        return;
+    }
+
     uintptr_t offsetGWorld = 0x1AD99C40; 
     uintptr_t offsetPlayerKart = 0x40;
 
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(10.0 * NSEC_PER_SEC)), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(10.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         
         uintptr_t func_SetSpeed = ResolveToken(0x0600B2C7); 
         uintptr_t func_SetNitro = ResolveToken(0x06033679); 
         
-        while (true) {
-            @autoreleasepool {
-                uintptr_t base = GetUnityBase();
-                
-                if (base && base != 0) {
-                    uintptr_t actorPool = ReadMem<uintptr_t>(base + offsetGWorld);
-                    if (actorPool != 0) {
-                        uintptr_t listViewPtr = actorPool + offsetPlayerKart;
-                        uintptr_t buffer = ReadMem<uintptr_t>(listViewPtr + 0x10);
+        NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:0.016 repeats:YES block:^(NSTimer * _Nonnull timer) {
+            uintptr_t base = GetUnityBase();
+            
+            if (base && base != 0) {
+                uintptr_t actorPool = ReadMem<uintptr_t>(base + offsetGWorld);
+                if (actorPool != 0) {
+                    uintptr_t listViewPtr = actorPool + offsetPlayerKart;
+                    uintptr_t buffer = ReadMem<uintptr_t>(listViewPtr + 0x10);
+                    
+                    if (buffer != 0) {
+                        uintptr_t kart = ReadMem<uintptr_t>(buffer);
                         
-                        if (buffer != 0) {
-                            uintptr_t kart = ReadMem<uintptr_t>(buffer);
+                        if (kart != 0) {
+                            if (mods.GiaToc && func_SetSpeed != 0) {
+                                typedef void (*SetSpeedFunc)(void*, float);
+                                SetSpeedFunc setSpeed = (SetSpeedFunc)func_SetSpeed;
+                                setSpeed((void*)kart, mods.GiaTocSpeed);
+                            }
                             
-                            if (kart != 0) {
-                                if (mods.GiaToc && func_SetSpeed != 0) {
-                                    typedef void (*SetSpeedFunc)(void*, float);
-                                    SetSpeedFunc setSpeed = (SetSpeedFunc)func_SetSpeed;
-                                    setSpeed((void*)kart, mods.GiaTocSpeed);
-                                }
-                                
-                                if (mods.VoHanNitro && func_SetNitro != 0) {
-                                    typedef void (*SetEnergyFunc)(void*, float);
-                                    SetEnergyFunc setEnergy = (SetEnergyFunc)func_SetNitro;
-                                    setEnergy((void*)kart, 100.0f);
-                                }
+                            if (mods.VoHanNitro && func_SetNitro != 0) {
+                                typedef void (*SetEnergyFunc)(void*, float);
+                                SetEnergyFunc setEnergy = (SetEnergyFunc)func_SetNitro;
+                                setEnergy((void*)kart, 100.0f);
                             }
                         }
                     }
                 }
-                [NSThread sleepForTimeInterval:0.016];
             }
-        }
+        }];
+        [[NSRunLoop mainRunLoop] addTimer:timer forMode:NSRunLoopCommonModes];
     });
 }
