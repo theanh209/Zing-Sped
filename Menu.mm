@@ -239,9 +239,25 @@ static void didFinishLaunching(CFNotificationCenterRef center, void *observer, C
     });
 }
 
-struct MyStruct {
-    MyStruct() {
-        CFNotificationCenterAddObserver(CFNotificationCenterGetLocalCenter(), NULL, &didFinishLaunching, (CFStringRef)UIApplicationDidFinishLaunchingNotification, NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
-    }
-};
-MyStruct mystruct;
+__attribute__((constructor))
+static void initMenu() {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(4.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        
+        // Cái Popup test đây
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"TEST DYLIB" message:@"Dylib da load thanh cong!" preferredStyle:UIAlertControllerStyleAlert];
+        [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+        [[UIApplication sharedApplication].keyWindow.rootViewController presentViewController:alert animated:YES completion:nil];
+
+        LoadConfig();
+        ApplyTheme(mods.ThemePreset);
+        ApplyFPS(mods.TargetFPS);
+        
+        LoadMods(); 
+
+        dispatch_async(dispatch_get_main_queue(), ^{
+            // Tạm comment dòng icon lại để test
+            // UpdateFloatingIcon(mods.IconSize, mods.IconOpacity);
+            [ImGuiDrawViewX showChange:YES];
+        });
+    });
+}
