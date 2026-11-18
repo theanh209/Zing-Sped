@@ -6,9 +6,6 @@
 @interface ImGuiDrawViewX () <MTKViewDelegate, UIKeyInput>
 @property (nonatomic, strong) id<MTLDevice> device;
 @property (nonatomic, strong) id<MTLCommandQueue> commandQueue;
-
-// Lưu ý: Đã xóa khai báo mtkView và isKeyboardVisible ở đây 
-// vì đã được khai báo public trong file .h để tránh lỗi trùng lặp (duplicate)
 @end
 
 @implementation ImGuiDrawViewX
@@ -78,7 +75,6 @@ extern MenuInteraction* menuTouchView;
     }
 }
 
-// Hàm getter này kết hợp với property readonly trong .h sẽ cho phép gọi .mtkView
 - (MTKView *)mtkView {
     return (MTKView *)self.view;
 }
@@ -180,20 +176,22 @@ extern MenuInteraction* menuTouchView;
             MenuSize = ImGui::GetWindowSize();
             LoadMenu();
             ImGui::End();
-            //ImGui::ShowDemoWindow();
         }
 
-        if (mods.ShowHUD) {
-            RenderHUD();
-        }
+        // ====================================================
+        // FIX LỖI BUILD: Đã comment các hàm không tồn tại
+        // ====================================================
+        // if (mods.ShowHUD) {
+        //     RenderHUD();
+        // }
 
-        if (mods.ShowDriftGuide) {
-            RenderDriftGuide();
-        }
+        // if (mods.ShowDriftGuide) {
+        //     RenderDriftGuide();
+        // }
 
-        if (mods.ShowSpeedometer) {
-            RenderSpeedometer();
-        }
+        // if (mods.ShowSpeedometer) {
+        //     RenderSpeedometer();
+        // }
 
         ImGui::EndFrame();
         ImGui::Render();
@@ -209,8 +207,6 @@ extern MenuInteraction* menuTouchView;
 }
 
 - (void)updateUserInteractionEnabled {
-    // Do not disable the overlay's superview: the floating menu button lives
-    // alongside the Metal view and would become untappable when the menu hides.
     self.view.userInteractionEnabled = NO;
     menuTouchView.userInteractionEnabled = menuVisible;
 }
