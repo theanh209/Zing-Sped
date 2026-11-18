@@ -18,7 +18,7 @@ $(TWEAK_NAME)_FILES = Menu.mm Mods.mm $(wildcard ImGui/*.mm) $(wildcard ImGui/*.
 $(TWEAK_NAME)_LIBRARIES += substrate
 $(TWEAK_NAME)_LDFLAGS += -L./Includes/Libs
 $(TWEAK_NAME)_LDFLAGS += -lz -stdlib=libc++ -ldobby_fixed
-$(TWEAK_NAME)_LDFLAGS += -rpath @executable_path/Frameworks
+$(TWEAK_NAME)_LDFLAGS += -rpath @executable_path
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 include $(THEOS)/makefiles/aggregate.mk
