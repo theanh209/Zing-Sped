@@ -1,4 +1,3 @@
-Dưới đây là toàn bộ mã nguồn hoàn chỉnh của tệp Mods.mm đã được tối ưu hóa, bổ sung đầy đủ các hàm kiểm tra con trỏ an toàn (chống văng/crash game tuyệt đối) để bạn có thể sao chép và thay thế hoàn toàn:
 // File: Mods.mm (Bản chuẩn - An toàn, chống văng game)
 #include "Mods.h"
 #import <Foundation/Foundation.h>
@@ -193,4 +192,3 @@ void LoadMods()
         }
     });
 }
-
